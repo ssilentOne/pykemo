@@ -15,3 +15,4 @@ class UrlType(StrEnum):
     SITE = "https://kemono.su"
     DATA = "https://c{i}.kemono.su"
     API = "https://kemono.su/api/v1"
+    DISCORD = "https://cdn.discordapp.com" # Specifically for Discord assets

@@ -4,14 +4,18 @@ Module for auxilair functions.
 
 from typing import TYPE_CHECKING, Optional
 
+from .._aux import FileHashResult, get_posts_responses
 from ..core import get
 from ..creators import Creator, CreatorsList
-from ..posts import Post, PostsList
-from ._aux_class import FileHashResult
+from ..discord import DiscordMessage
+from ..files import File
+from ..posts import ELEMENTS_PER_PAGE, Post, PostsList
+from ..services import ServiceType
 
 if TYPE_CHECKING:
-    from ..services import ServiceLike
     from datetime import datetime
+
+    from ..services import ServiceLike
 
 MAX_POSTS_LIMIT: int = 1000
 "Arbitrary limit for posts to be queried with auxiliar functions."
@@ -50,9 +54,12 @@ def get_posts(query: Optional[str]=None,
         raise ValueError("max_posts must be an integer greater than zero but lower than "
                          f"{MAX_POSTS_LIMIT}, not '{max_posts}'")
 
-    response_bodies = Creator.get_posts_responses(endpoint="/posts",
-                                                  query=query,
-                                                  max_posts=max_posts)
+    if max_posts is None:
+        max_posts = ELEMENTS_PER_PAGE
+
+    response_bodies = get_posts_responses(endpoint="/posts",
+                                          query=query,
+                                          max_posts=max_posts)
     posts = []
 
     for post_fields in response_bodies:
@@ -61,8 +68,8 @@ def get_posts(query: Optional[str]=None,
             (since is not None and not Post.since_static(published_str, since))):
             continue
 
-        post_fields.update(creator=Creator.from_profile(post_fields.get("service"),
-                                                        post_fields.get("user")))
+        post_fields.update(creator=get_creator(post_fields.get("service"),
+                                               post_fields.get("user")))
         posts.append(Post.from_dict(**post_fields))
 
     return posts
@@ -91,7 +98,39 @@ def get_file_hash(hash: str) -> FileHashResult:
     Search a file by hash. Also tries to retrieve posts where such file is present.
     """
 
-    pass
+    response = get(f"/search_hash/{hash}")
+
+    if response.status_code == 404:
+        return FileHashResult.empty()
+
+    body = response.json()
+
+    ext = body.get("ext")
+
+    file = File(name=f"{hash}{ext}",
+                path=f"/data/{hash[0:2]}/{hash[2:4]}/{hash}{ext}",
+                content_type=body.get("mime"))
+
+    posts_list = []
+    posts_res = body.get("posts", None)
+    posts = (posts_res if posts_res is not None else [])
+    for post_fields in posts:
+        post_fields.update(creator=get_creator(post_fields.get("service"),
+                                               post_fields.get("user")))
+        posts_list.append(Post.from_dict(**post_fields))
+
+    msgs_list = []
+    msgs_res = body.get("discord_posts", None)
+    msgs = (msgs_res if msgs_res is not None else [])
+    for msg_fields in msgs:
+        creator = get_creator(service=ServiceType.DISCORD,
+                              creator_id=msg_fields.get("server"))
+        msg_fields.update(parent_channel=creator.get_channel(msg_fields.get("channel")),
+                          content=msg_fields.get("substring", ""))
+        msgs_list.append(DiscordMessage.from_dict(**msg_fields))
+
+
+    return FileHashResult(file=file, posts=posts_list, disc=msgs_list)
 
 
 def get_app_version() -> str:

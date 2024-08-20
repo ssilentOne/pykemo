@@ -2,7 +2,7 @@
 Files module.
 """
 
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Optional, Union, TypeAlias, Literal
 from tqdm import tqdm
 from pathlib import Path
 
@@ -12,6 +12,9 @@ if TYPE_CHECKING:
     from os import PathLike
 
     from ..core import UrlLike
+
+FilesList: TypeAlias = list["File"]
+FileDict: TypeAlias = dict[Literal["name", "path"], Union[str, "PathLike", "UrlLike"]]
 
 BAR_WIDTH: int = 125
 """
@@ -26,6 +29,7 @@ class File:
                  name: "PathLike",
                  path: "PathLike",
                  content_type: Optional[str]=None,
+                 url_source: "UrlLike"=UrlType.DATA,
                  server: int=3) -> None:
         """
         Initializes a File. It may not have downloaded content yet, and merely be a
@@ -35,21 +39,26 @@ class File:
         path: The relative path of the file's location.
         content_type: The MIME type of the file. May be unitialized to be inferred later
                       from the download.
-        server: Which server to refer to. Different files may be in different servers, which
-                do affect the URL prefix.
+        server: Which server to refer to, if using the DATA url type. Different files may be in
+                different servers there, which do affect the URL prefix.
         """
 
         self._name: "PathLike" = name
-        self._rel_path: "UrlLike" = f"/data{path}"
+        self._rel_path: "UrlLike" = path
 
         self._content_type: Optional[str] = content_type
+        self._url_root: "UrlLike" = url_source
         self._server: int = server
+
+        if self._is_data(self._url_root):
+            self._url_root = self._url_root.format(i=self._server)
+
 
 
     @classmethod
     def from_dict(cls, **fields) -> "File":
         """
-        Initializes a file from a response fields.
+        Initializes a File instance from a response fields.
         """
 
         return cls(
@@ -70,6 +79,13 @@ class File:
         return f"<File '{self.name}' in '{self._rel_path}'>"
 
 
+    @staticmethod
+    def _is_data(url: "UrlLike") -> bool:
+        "Checks if the URL is of the DATA url type."
+
+        return url == UrlType.DATA
+
+
     @property
     def name(self) -> "PathLike":
         "Gives the name of the file."
@@ -88,7 +104,7 @@ class File:
     def url(self) -> "UrlLike":
         "Gives the URL of the file."
 
-        return f"{UrlType.DATA.format(i=self._server)}{self._rel_path}"
+        return f"{self._url_root}{self._rel_path}"
 
 
     def _is_text_mode(self) -> bool:
@@ -126,7 +142,7 @@ class File:
         elif path.exists() and not force:
             return False
         
-        response = get(self._rel_path, url_type=UrlType.DATA.format(i=self._server), stream=True)
+        response = get(self._rel_path, url_type=self._url_root, stream=True)
 
         if self.content_type is None:
             self._content_type = response.headers.get("content-type", None)

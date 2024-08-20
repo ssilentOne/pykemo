@@ -6,11 +6,16 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import TYPE_CHECKING, Literal, Optional, TypeAlias, Union
 
-from grequests import map as async_map
-
+from .._aux import (
+    async_get_posts_responses,
+    before_date,
+    get_posts_responses,
+    since_date,
+)
 from ..announcements import Announcement
-from ..core import UrlType, async_get, get
-from ..fancards import Fancard
+from ..core import UrlType, get
+from ..discord import ChannelsList, DiscordChannel
+from ..fanbox import Fancard
 from ..posts import DEFAULT_DATE_FMT, ELEMENTS_PER_PAGE, Post, PostsList
 from ..services import ServiceType
 
@@ -26,16 +31,6 @@ _CreatorFields: TypeAlias = Literal["id", "name", "service", "indexed", "updated
 CreatorDict: TypeAlias = dict[_CreatorFields, Union[str, int, None]]
 AnnouncementsList: TypeAlias = list[Announcement]
 FancardsList: TypeAlias = list[Fancard]
-
-ASYNC_FETCH_BATCH: int = 50
-"""
-Number of asynchronous request to make at a time in any given batch.
-"""
-
-DEFAULT_BATCH_SEND_SIZE: int = 10
-"""
-Inside the batch, how many asynchronous requests to send at a time.
-"""
 
 
 @dataclass(kw_only=True)
@@ -65,6 +60,9 @@ class Creator:
 
     _fancards: FancardsList = field(default_factory=list, init=False, repr=False)
     __fanc_loaded: bool = field(default=False, init=False, repr=False)
+
+    _channels: ChannelsList = field(default_factory=list, init=False, repr=False)
+    __chan_loaded: bool = field(default=False, init=False, repr=False)
 
 
     @classmethod
@@ -100,25 +98,6 @@ class Creator:
         return Creator.from_dict(**creator_response.json())
 
 
-    @staticmethod
-    def query_params(query: Optional[str], offset: Optional[int]) -> dict[str, Union[str, int]]:
-        "Processes and creates a dictionary that is the aprameters of a request."
-
-        params = {}
-
-        if query is not None:
-            params.update(q=query)
-
-        if offset is not None:
-            if offset % ELEMENTS_PER_PAGE != 0:
-                raise ValueError(f"Value for offset {offset} not valid."
-                                 f" Must be a multiple of {ELEMENTS_PER_PAGE}.")
-
-            params.update(o=offset)
-
-        return params
-
-
     @property
     def announcements(self) -> AnnouncementsList:
         """
@@ -148,6 +127,21 @@ class Creator:
 
 
     @property
+    def channels(self) -> ChannelsList:
+        """
+        Gets all the Discord channels associated with this creator. Only really works if the
+        service is Discord, returns an empty list if not.
+        This is because the ID of a Discord 'creator', is really the ID of a Discord server/guild.
+        """
+
+        if not self.__chan_loaded:
+            self.__chan_loaded = True
+            self._channels = self.fetch_channels()
+
+        return self._channels
+
+
+    @property
     def url(self) -> "UrlLike":
         """
         Retrieves the URL of the creator.
@@ -171,90 +165,6 @@ class Creator:
                 links.append(creator)
 
         return links
-
-
-    @staticmethod
-    def get_posts_responses(*,
-                            endpoint: "UrlLike",
-                            query: Optional[str]=None,
-                            max_posts: Optional[int]=None) -> list["Response"]:
-        """
-        Gets the responses of posts by page.
-        """
-
-        responses = []
-
-        if max_posts is None: # Try to get ALL the posts
-            cur_page = 0
-            while True:
-                page_response = get(endpoint,
-                                    params=Creator.query_params(query, cur_page * ELEMENTS_PER_PAGE))
-                if page_response.status_code != 429:
-                    responses.extend(page_response.json())
-
-                if  not page_response.json():
-                    break
-
-                cur_page += 1
-
-        else:
-            n_pages = (max_posts // ELEMENTS_PER_PAGE) + 1 # one more for the surplus
-            for page in range(n_pages):
-                page_response = get(endpoint,
-                                    params=Creator.query_params(query, page * ELEMENTS_PER_PAGE))
-
-                # by this point, one would expect this to be a list of posts
-                if page_response.status_code != 429:
-                    responses.extend(page_response.json())
-
-        return responses
-
-
-    @staticmethod
-    def async_get_posts_responses(*,
-                                  endpoint: "UrlLike",
-                                  query: Optional[str]=None,
-                                  max_posts: Optional[int]=None,
-                                  batch_send_size: Optional[int]=None) -> list["Response"]:
-        """
-        Gets the asynchronous responses of posts by page.
-        """
-
-        responses = []
-        exit_flag = False
-        send_size = (DEFAULT_BATCH_SEND_SIZE if batch_send_size is not None else batch_send_size)
-
-        if max_posts is None: # Try to get ALL the posts
-            cur_page = 0
-            while not exit_flag:
-                req_batch = []
-                for _ in range(ASYNC_FETCH_BATCH):
-                    page_async_req = async_get(
-                        endpoint,
-                        params=Creator.query_params(query, cur_page * ELEMENTS_PER_PAGE))
-                    req_batch.append(page_async_req)
-                    cur_page += 1
-
-                res_batch = async_map(req_batch, size=send_size)
-
-                for page_response in res_batch:
-                    if page_response.status_code != 429:
-                        responses.extend(page_response.json())
-                        if not page_response.json():
-                            exit_flag = True
-
-        else:
-            n_pages = (max_posts // ELEMENTS_PER_PAGE) + 1 # one more for the surplus
-            req_batch = (async_get(endpoint,
-                                   params=Creator.query_params(query, page * ELEMENTS_PER_PAGE))
-                        for page in range(n_pages))
-            res_batch = async_map(req_batch, size=send_size)
-
-            for res in res_batch:
-                if res.status_code != 429:
-                    responses.extend(res.json())
-
-        return responses
 
 
     def posts(self,
@@ -281,15 +191,17 @@ class Creator:
         if max_posts is not None and max_posts <= 0:
             raise ValueError(f"max_posts must be an integer greater than zero, not '{max_posts}'")
 
-        posts_req = (self.async_get_posts_responses if asynchronous else self.get_posts_responses)
+        posts_req = (async_get_posts_responses if asynchronous else get_posts_responses)
         response_bodies = posts_req(endpoint=f"/{self.service}/user/{self.id}",
-                                    query=query, max_posts=max_posts)
+                                    query=query,
+                                    max_posts=max_posts,
+                                    page_stepping=ELEMENTS_PER_PAGE)
         posts_list = []
 
         for post_fields in response_bodies:
             published_str = post_fields["published"]
-            if ((before is not None and not Post.before_static(published_str, before)) or
-                (since is not None and not Post.since_static(published_str, since))):
+            if ((before is not None and not before_date(published_str, before)) or
+                (since is not None and not since_date(published_str, since))):
                 continue
 
             post_fields.update(creator=self)
@@ -344,3 +256,37 @@ class Creator:
                 fancards.append(Fancard.from_dict(**fancard_fields))
 
         return fancards
+
+
+    def _get_channels_response(self) -> "Response":
+        "Gets the channels request."
+
+        return get(f"/discord/channel/lookup/{self.id}")
+
+
+    def fetch_channels(self) -> ChannelsList:
+        """
+        Fetches a request for Discord channels, if available.
+        """
+
+        channels = []
+
+        if self.service == ServiceType.DISCORD:
+
+            for chan_fields in self._get_channels_response().json():
+                chan_fields.update(creator=self)
+                channels.append(DiscordChannel.from_dict(**chan_fields))
+
+
+        return channels
+
+
+    def get_channel(self, channel_id: str) -> Optional[DiscordChannel]:
+        "Fetches a specific channel of this creator by id."
+
+        for chan_fields in self._get_channels_response().json():
+            if chan_fields.get("id") == channel_id:
+                chan_fields.update(creator=self)
+                return DiscordChannel.from_dict(**chan_fields)
+
+        return None

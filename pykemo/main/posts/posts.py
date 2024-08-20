@@ -9,9 +9,10 @@ from typing import TYPE_CHECKING, Optional, TypeAlias, Union
 
 from tqdm import tqdm
 
+from .._aux import DEFAULT_DATE_FMT, sanitize_data_url
 from ..comments import Comment
 from ..core import UrlType, get
-from ..files import BAR_WIDTH, File
+from ..files import BAR_WIDTH, File, FilesList
 from .post_revisions import PostRevision
 
 if TYPE_CHECKING:
@@ -22,7 +23,6 @@ if TYPE_CHECKING:
     from ..services import ServiceLike
 
 PostsList: TypeAlias = list["Post"]
-DateOrFmt: TypeAlias = Union[str, datetime]
 CommentsList: TypeAlias = list[Comment]
 PostRevsList: TypeAlias = list[PostRevision]
 
@@ -31,9 +31,6 @@ ELEMENTS_PER_PAGE: int = 50
 This is how the API ortganizes the posts and other things.
 Each 'page' has fifty (50) elements at most.
 """
-
-DEFAULT_DATE_FMT: str = r"%Y-%m-%dT%H:%M:%S"
-"The default date formatting to use."
 
 
 @dataclass(kw_only=True)
@@ -69,7 +66,7 @@ class Post:
     published: datetime = field(repr=False)
     edited: Optional[datetime] = field(default=None, repr=False)
     file: Optional[File] = field(default=None, repr=False)
-    attachments: list[File] = field(repr=False)
+    attachments: FilesList = field(default_factory=list, repr=False)
     creator: "Creator" = field(repr=False)
     is_revision: bool = field(default=False, repr=False)
 
@@ -91,16 +88,17 @@ class Post:
         """
 
         added_field = fields.get("added", None)
-        added = (cls.str_to_date(added_field, rf"{DEFAULT_DATE_FMT}.%f")
+        added = (datetime.strptime(added_field, rf"{DEFAULT_DATE_FMT}.%f")
                  if added_field is not None
                  else None)
         
         edited_field = fields.get("edited", None)
-        edited = (cls.str_to_date(edited_field, DEFAULT_DATE_FMT)
+        edited = (datetime.strptime(edited_field, DEFAULT_DATE_FMT)
                  if edited_field is not None
                  else None)
         
         file_dict = fields.get("file")
+        attachments = fields.get("attachments")
 
         return cls(
             id=fields.get("id"),
@@ -112,11 +110,11 @@ class Post:
             embed=fields.get("embed", {}),
             shared_file=fields.get("shared_file", False),
             added=added,
-            published=cls.str_to_date(fields.get("published"), DEFAULT_DATE_FMT),
+            published=datetime.strptime(fields.get("published"), DEFAULT_DATE_FMT),
             edited=edited,
-            file=(File.from_dict(**file_dict) if file_dict else None),
-            attachments=[File.from_dict(**attachment_fields)
-                         for attachment_fields in fields.get("attachments")],
+            file=(File.from_dict(**sanitize_data_url(file_dict)) if file_dict else None),
+            attachments=[File.from_dict(**sanitize_data_url(attachment_fields))
+                         for attachment_fields in attachments],
             creator=fields.get("creator", None),
             is_revision=fields.get("is_revision", False)
         )
@@ -162,62 +160,16 @@ class Post:
 
 
     @property
-    def _all_files(self) -> list[File]:
+    def _all_files(self) -> FilesList:
         "Retrieves both the preview file and the attachments, if any."
 
         return ([self.file] if self.file is not None else []) + self.attachments
-
-
-    @staticmethod
-    def str_to_date(date: str, fmt: str=DEFAULT_DATE_FMT) -> datetime:
-        "Converts a date with a given format to a datetime object."
-
-        return datetime.strptime(date, fmt)
-
-
-    @staticmethod
-    def _process_fmt(fmt: Optional[str], /) -> str:
-        "Converts the format to a default one if it is not present."
-
-        return (fmt if fmt is not None else DEFAULT_DATE_FMT)
-
-
-    @staticmethod
-    def _process_date(date: DateOrFmt, fmt: Optional[str]) -> datetime:
-        "Process the date if it is a string, or uses as-is if it is already a datetime object."
-
-        if isinstance(date, str):
-            return Post.str_to_date(date, Post._process_fmt(fmt))
-
-        return date
-
-
-    @staticmethod
-    def before_static(date1: DateOrFmt,
-                      date2: DateOrFmt,
-                      *,
-                      fmt1: Optional[str]=None,
-                      fmt2: Optional[str]=None) -> bool:
-        "Compares if the dates (in string form) with date1 < date2"
-
-        return Post._process_date(date1, fmt1) < Post._process_date(date2, fmt2)
 
 
     def before(self, date: datetime) -> bool:
         "Verifies if the post was published before a certain date."
 
         return self.published < date
-
-
-    @staticmethod
-    def since_static(date1: DateOrFmt,
-                     date2: DateOrFmt,
-                     *,
-                     fmt1: Optional[str]=None,
-                     fmt2: Optional[str]=None) -> bool:
-        "Compares if the dates (in string form) with date1 >= date2"
-
-        return Post._process_date(date1, fmt1) >= Post._process_date(date2, fmt2)
 
 
     def since(self, date: datetime) -> bool:

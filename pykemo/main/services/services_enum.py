@@ -3,9 +3,11 @@ Enumeration of services that provide the users.
 """
 
 from enum import StrEnum
-from typing import TypeAlias, Union
+from typing import Literal, TypeAlias, Union
 
-ServiceLike: TypeAlias = Union[str, "ServiceType"]
+_ServiceLiteral: TypeAlias = Literal["patreon", "fanbox", "gumroad", "suscribe_star",
+                                     "fantia", "boosty", "afdian", "discord"]
+ServiceLike: TypeAlias = Union[_ServiceLiteral, "ServiceType"]
 
 
 class ServiceType(StrEnum):

@@ -1,15 +1,10 @@
 """
-Main module.
+pykemo entrypoint.
 """
 
 from sys import argv
 
-
-def main(*args) -> int:
-    "Main function"
-
-    return 0
-
+from .main.main import main
 
 if __name__ == "__main__":
     main(*argv)

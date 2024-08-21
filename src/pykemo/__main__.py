@@ -4,7 +4,7 @@ pykemo entrypoint.
 
 from sys import argv
 
-from .main.main import main
+from .main import main
 
 if __name__ == "__main__":
     main(*argv)

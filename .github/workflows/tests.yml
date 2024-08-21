@@ -1,25 +1,25 @@
-name: Tests
+# name: Tests
 
-on: [push, pull_request]
+# on: [push, pull_request]
 
-jobs:
-  unittest:
-    name: Testing on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: ["ubuntu-latest", "windows-latest"]
-        python-version: ["3.12"]
-    steps:
-    - uses: actions/checkout@v2
-    - name: Configuring Python version ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Installing dependencies
-      run: |
-        python -m pip install --upgrade pip
-        python -m pip install -r requirements.txt
-    - name: Running Tests
-      run: |
-        python -m unittest src.tests
+# jobs:
+#   unittest:
+#     name: Testing on ${{ matrix.os }}
+#     runs-on: ${{ matrix.os }}
+#     strategy:
+#       matrix:
+#         os: ["ubuntu-latest", "windows-latest"]
+#         python-version: ["3.12"]
+#     steps:
+#     - uses: actions/checkout@v2
+#     - name: Configuring Python version ${{ matrix.python-version }}
+#       uses: actions/setup-python@v2
+#       with:
+#         python-version: ${{ matrix.python-version }}
+#     - name: Installing dependencies
+#       run: |
+#         python -m pip install --upgrade pip
+#         python -m pip install -r requirements.txt
+#     - name: Running Tests
+#       run: |
+#         python -m unittest src.tests

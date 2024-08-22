@@ -2,6 +2,4 @@ API
 ===
 
 .. autosummary::
-   :toctree: generated
-
-   pykemo
+   :toctree: pykemo

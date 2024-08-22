@@ -8,13 +8,13 @@ from sys import path
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-path.insert(0, abspath(".../src"))
+path.insert(0, abspath("../../src"))
 path.append(abspath("extensions"))
 
 project = "pykemo"
 author = "ssilentOne"
 
-version = "0.1.0"
+version = "0.5.1"
 
 # -- General configuration
 
@@ -41,3 +41,7 @@ html_theme = "sphinx_rtd_theme"
 
 # -- Options for EPUB output
 epub_show_urls = "footnote"
+
+autodoc_mock_imports = ["grequests", "requests", "tqdm"]
+
+autosummary_generate = True

@@ -1,5 +1,0 @@
-API
-===
-
-.. autosummary::
-   :toctree: pykemo

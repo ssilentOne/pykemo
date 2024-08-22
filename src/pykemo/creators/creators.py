@@ -170,7 +170,7 @@ class Creator:
     def posts(self,
               *,
               query: Optional[str]=None,
-              max_posts: Optional[int]=None,
+              max_posts: Optional[int]=ELEMENTS_PER_PAGE,
               before: Optional[datetime]=None,
               since: Optional[datetime]=None,
               asynchronous: bool=False) -> PostsList:
@@ -180,7 +180,7 @@ class Creator:
 
         query: The string to search for specific posts.
         max_posts: The max number of posts to look through. This is NOT necessarily the number of
-                   posts to enter the lists.
+                   posts to enter the lists. If `None`, it will try to retrieve ALL the posts.
         before: Include only posts before this date.
         since: Include only posts after and including this date.
         asynchronous: Wether to use asynchronous requests to maybe boost performance. It's really

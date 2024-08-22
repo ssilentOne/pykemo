@@ -37,7 +37,7 @@ def get_creators() -> CreatorsList:
 
 
 def get_posts(query: Optional[str]=None,
-              max_posts: Optional[int]=None,
+              max_posts: int=ELEMENTS_PER_PAGE,
               before: Optional["datetime"]=None,
               since: Optional["datetime"]=None) -> PostsList:
     """
@@ -53,9 +53,6 @@ def get_posts(query: Optional[str]=None,
     if max_posts is not None and (max_posts <= 0 or max_posts > MAX_POSTS_LIMIT):
         raise ValueError("max_posts must be an integer greater than zero but lower than "
                          f"{MAX_POSTS_LIMIT}, not '{max_posts}'")
-
-    if max_posts is None:
-        max_posts = ELEMENTS_PER_PAGE
 
     response_bodies = get_posts_responses(endpoint="/posts",
                                           query=query,

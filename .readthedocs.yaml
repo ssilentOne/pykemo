@@ -8,10 +8,10 @@ build:
 
 python:
   install:
-    # for docs building, not the actual dependencies of the lib
-    - requirements: docs/requirements.txt
+    # # for docs building, not the actual dependencies of the lib
+    # - requirements: docs/requirements.txt
 
-    # # now for the actual dependencies to install themselves before generating docs
+    # # # now for the actual dependencies to install themselves before generating docs
     - method: pip
       path: .
       extra_requirements:

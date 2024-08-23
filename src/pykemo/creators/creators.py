@@ -36,7 +36,8 @@ FancardsList: TypeAlias = list[Fancard]
 @dataclass(kw_only=True)
 class Creator:
     """
-    Container class for a creator.
+    Container class for a creator. Mainly initialized when using helper functions like
+    :func:`.get_creator()`.
 
     :param id: It is the ID of the creator.
     :param name: It is the given name of the creator.

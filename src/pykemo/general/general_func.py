@@ -27,7 +27,7 @@ def get_creators() -> CreatorsList:
 
     .. warning:: There is currently no limitations to this function. It will really try to fetch
                  **ALL the creators on the site**. If you do not explicitly need this, do not use
-                 this.
+                 it.
 
     :returns: The list of all creators.
     :rtype: list[:class:`.Creator`]
@@ -60,6 +60,9 @@ def get_posts(query: Optional[str]=None,
     :type max_posts: :class:`int`
     :type before: Optional[:class:`datetime.datetime`]
     :type since: Optional[:class:`datetime.datetime`]
+
+    :return: The list of posts of the query.
+    :rtype: list[:class:`.Post`]
     """
 
     if max_posts is not None and (max_posts <= 0 or max_posts > MAX_POSTS_LIMIT):

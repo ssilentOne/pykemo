@@ -20,12 +20,9 @@ version = "0.5.1"
 
 extensions = [
     "sphinx.ext.duration",
-    "sphinx.ext.doctest",
     "sphinx.ext.autodoc",
-    "sphinx.ext.autosummary",
-    "sphinx.ext.intersphinx",
-    "myst_parser",
-    "sphinx_design"
+    "sphinx_design",
+    "sphinx_rtd_dark_mode"
 ]
 
 intersphinx_mapping = {
@@ -38,10 +35,11 @@ templates_path = ["_templates"]
 
 # -- Options for HTML output
 html_theme = "sphinx_rtd_theme"
+html_logo = "../../media/img/pykemo_logo.png"
 
 # -- Options for EPUB output
 epub_show_urls = "footnote"
 
+# -- autodoc extension configs
+autodoc_typehints = "description"
 autodoc_mock_imports = ["grequests", "requests", "tqdm"]
-
-autosummary_generate = True

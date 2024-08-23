@@ -21,7 +21,7 @@ DEFAULT_COMMENT_DATE_FMT: str = r"%Y-%m-%dT%H:%M:%S"
 class Comment:
     """
     Comment of a post.
-    Usually instantiated through :attr:`Post.comments`
+    Usually instantiated through :attr:`.Post.comments`
 
     :param id: The ID of the comment itself.
     :param parent_id: The ID of the parent comment. Used when the comment itself is a response to another.

@@ -278,9 +278,7 @@ class Post:
     def fetch_comments(self) -> CommentsList:
         """
         Fetches the comments of the post.
-        .. warning:: This is designed for internal purposes, as it is recommended to use 
-                     the :attr:`.comments` property instead.
-                     However, it can also be used as-is to prevent using a potentially outdated field.
+        .. warning:: This is designed for internal purposes, as it is recommended to use the :attr:`.comments` property instead. However, it can also be used as-is to prevent using a potentially outdated field.
 
         :return: A list of the comments of this post.
         :rtype: list[:class:`.Comment`]

@@ -37,8 +37,15 @@ Inside the batch, how many asynchronous requests to send at a time.
 
 def sanitize_data_url(file_dict: "FileDict") -> "FileDict":
     """
-    Appends the relative path of the file path with '/data'.
+    Appends the relative path of the file path with ``'/data'``.
     Returns the dict itself for convenience purposes.
+
+    :param file_dict: A dict of the type ``dict[Literal['name', 'path'], str]``.
+
+    :type file_dict: :type:`.FileDict`
+
+    :return: The same dict, but with ``'/data'`` prefixed to the paths.
+    :rtype: :type:`.FileDict`
     """
 
     file_path = file_dict.get("path", None)
@@ -49,13 +56,30 @@ def sanitize_data_url(file_dict: "FileDict") -> "FileDict":
 
 
 def process_fmt(fmt: Optional[str], /) -> str:
-    "Converts the format to a default one if it is not present."
+    """
+    :param fmt: The format to be processed.
+
+    :type fmt: Optional[:class:`str`]
+
+    :return: Leaves `fmt` as-is, unless it's ``None``, then returns a default value instead.
+    :rtype: :class:`str`
+    """
 
     return (fmt if fmt is not None else DEFAULT_DATE_FMT)
 
 
 def process_date(date: DateOrFmt, fmt: Optional[str]) -> datetime:
-    "Process the date if it is a string, or uses as-is if it is already a datetime object."
+    """
+    Process the date if it's a string, or use it as-is if it is already a datetime object.
+
+    :param date: The date string in question.
+    :param fmt: The format to use to process de date.
+
+    :type fmt: Optional[:class:`str`]
+
+    :return: A processed :class:`datetime.datetime` object.
+    :rtype: :class:`datetime.datetime`
+    """
 
     if isinstance(date, str):
         return datetime.strptime(date, process_fmt(fmt))
@@ -64,21 +88,51 @@ def process_date(date: DateOrFmt, fmt: Optional[str]) -> datetime:
 
 
 def before_date(date1: DateOrFmt,
-           date2: DateOrFmt,
-           *,
-           fmt1: Optional[str]=None,
-           fmt2: Optional[str]=None) -> bool:
-    "Compares if the dates (in string form) with date1 < date2"
+                date2: DateOrFmt,
+                *,
+                fmt1: Optional[str]=None,
+                fmt2: Optional[str]=None) -> bool:
+    """
+    Compares if the dates (in string form) with `date1` < `date2`.
+
+    :param date1: The first date.
+    :param date2: The second date.
+    :param fmt1: The format used to process `date1`.
+    :param fmt2: The format used to process `date2`.
+
+    :type date1: :class:`datetime.datetime`
+    :type date2: :class:`datetime.datetime`
+    :type fmt1: Optional[:class:`str`]
+    :type fmt2: Optional[:class:`str`]
+
+    :return: The result of ``date1 < date2``
+    :rtype: :class:`bool`
+    """
 
     return process_date(date1, fmt1) < process_date(date2, fmt2)
 
 
 def since_date(date1: DateOrFmt,
-          date2: DateOrFmt,
-          *,
-          fmt1: Optional[str]=None,
-          fmt2: Optional[str]=None) -> bool:
-    "Compares if the dates (in string form) with date1 >= date2"
+               date2: DateOrFmt,
+               *,
+               fmt1: Optional[str]=None,
+               fmt2: Optional[str]=None) -> bool:
+    """
+    Compares if the dates (in string form) with `date1` >= `date2`.
+
+    :param date1: The first date.
+    :param date2: The second date.
+    :param fmt1: The format used to process `date1`.
+    :param fmt2: The format used to process `date2`.
+
+    :type date1: :class:`datetime.datetime`
+    :type date2: :class:`datetime.datetime`
+    :type fmt1: Optional[:class:`str`]
+    :type fmt2: Optional[:class:`str`]
+
+    :return: The result of ``date1 >= date2``
+    :rtype: :class:`bool`
+    """
 
     return process_date(date1, fmt1) >= process_date(date2, fmt2)
 
@@ -86,7 +140,21 @@ def since_date(date1: DateOrFmt,
 def query_params(query: Optional[str]=None,
                  offset: Optional[int]=None,
                  stepping: int=0) -> ParamsFmtDict:
-    "Formats a parameters dictionary to send with a response in messages queries."
+    """
+    .. warning:: `(for internal purposes)`
+    Formats a parameters dictionary to send with a response in messages queries.
+
+    :param query: The search query string of the dict.
+    :param offset: The search offset int of the dict.
+    :param stepping: The stepping to which the search will be made.
+
+    :type query: Optional[:class:`str`]
+    :type offset: Optional[:class:`int`]
+    :type stepping: :class:`int`
+
+    :return: A dictionary already poblated with the parameters.
+    :rtype: :type:`ParamsFmtDict`
+    """
 
     params = {}
 
@@ -111,6 +179,19 @@ def get_posts_responses(*,
                         page_stepping: int) -> list["Response"]:
     """
     Gets the responses of posts by page.
+
+    :param endpoint: The endpoint that the request will map to.
+    :param query: A search query string to filter the results.
+    :param max_posts: The max posts to fit into the final list.
+    :param page_stepping: The stepping of the paging.
+
+    :type endpoint: :type:`UrlLike`
+    :type query: Optional[:class:`str`]
+    :type max_posts: Optional[:class:`int`]
+    :type page_stepping: :class:`int`
+
+    :return: A list of :class:`requests.Response`, to be further processed.
+    :rtype: list[`Response <https://requests.readthedocs.io/en/latest/api/#requests.Response>`_]
     """
 
     responses = []
@@ -153,6 +234,21 @@ def async_get_posts_responses(*,
                               batch_send_size: Optional[int]=None) -> list["Response"]:
     """
     Gets the asynchronous responses of posts by page.
+
+    :param endpoint: The endpoint that the request will map to.
+    :param query: A search query string to filter the results.
+    :param max_posts: The max posts to fit into the final list.
+    :param page_stepping: The stepping of the paging.
+    :param batch_send_size: The size by which to send asynchrnous requests at the same time per batch.
+
+    :type endpoint: :type:`UrlLike`
+    :type query: Optional[:class:`str`]
+    :type max_posts: Optional[:class:`int`]
+    :type page_stepping: :class:`int`
+    :type batch_send_size: Optional[:class:`int`]
+
+    :return: A list of :class:`requests.Response`, to be further processed.
+    :rtype: list[`Response <https://requests.readthedocs.io/en/latest/api/#requests.Response>`_]
     """
 
     responses = []

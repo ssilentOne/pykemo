@@ -38,20 +38,37 @@ class Post:
     """
     Post with content.
 
-    id: The ID of the post.
-    creator_id: The creator's ID that owns the post content (not the user that uploaded it).
-    service: The services that provides the content.
-    title: The title of the post.
-    content: The content string of the post.
-    substring: The sub-string for the post description.
-    embed: A dictionary denoting the embed.
-    shared_file: Wether the post has a shared file.
-    added: When was the post added.
-    published: When was the post published.
-    edited: When was the post last edited.
-    file: The file that the posts uses when previewed.
-    attachments: All the files under this post.
-    comments: The comments of this post. May be unloaded.
+    :param id: The ID of the post.
+    :param creator_id: The creator's ID that owns the post content (not the user that uploaded it).
+    :param service: The services that provides the content.
+    :param title: The title of the post.
+    :param content: The content string of the post.
+    :param substring: The sub-string for the post description.
+    :param embed: A dictionary denoting the embed.
+    :param shared_file: Wether the post has a shared file.
+    :param added: When was the post added.
+    :param published: When was the post published.
+    :param edited: When was the post last edited.
+    :param file: The file that the posts uses when previewed.
+    :param attachments: All the files under this post.
+    :param creator: The creator of this post.
+    :param is_revision: Flag to see if this post is a revision of another.
+
+    :type id: :class:`str`
+    :type creator_id: :class:`str`
+    :type service: :type:`.ServiceLike`
+    :type title: :class:`str`
+    :type content: :class:`str`
+    :type substring: :class:`str`
+    :type embed: :class:`dict`
+    :type shared_file: :class:`bool`
+    :type added: Optional[:class:`datetime.datetime`]
+    :type published: :class:`datetime.datetime`
+    :type edited: Optional[:class:`datetime.datetime`]
+    :type file: Optional[:class:`.File`]
+    :type attachments: list[:class:`.File`]
+    :type creator: :class:`.Creator`
+    :type is_revision: :class:`bool`
     """
 
     id: str
@@ -85,6 +102,9 @@ class Post:
     def from_dict(cls, **fields) -> "Post":
         """
         Initializes a Post instance from a response fields.
+
+        :return: A post instance.
+        :rtype: :class:`.Post`
         """
 
         added_field = fields.get("added", None)
@@ -122,7 +142,10 @@ class Post:
 
     @property
     def comments(self) -> CommentsList:
-        "Loads the comments of the post."
+        """
+        :return: The comments of the post.
+        :rtype: list[:class:`.Comment`]
+        """
 
         if not self.__comm_loaded:
             self.__comm_loaded = True
@@ -132,7 +155,10 @@ class Post:
 
     @property
     def flagged(self) -> bool:
-        "Checks if the post is flagged for reimport."
+        """
+        :return: Wether the post is flagged for reimport.
+        :rtype: :class:`bool`
+        """
 
         if not self.__flag_loaded and not self.is_revision:
             self.__flag_loaded = True
@@ -143,7 +169,10 @@ class Post:
 
     @property
     def revisions(self) -> PostRevsList:
-        "Retrieves all the revisions of this post."
+        """
+        :return: All the revisions of this post.
+        :rtype: list[:class:`.PostRevision`]
+        """
 
         if not self.__revs_loaded and not self.is_revision:
             self.__revs_loaded = True
@@ -154,26 +183,44 @@ class Post:
 
     @property
     def url(self) -> "UrlLike":
-        "Gives the URL of the post."
+        """
+        :return: The full URL of the post.
+        :rtype: :type:`.UrlLike`
+        """
 
         return f"{UrlType.SITE}/{self.service}/user/{self.creator_id}/post/{self.id}"
 
 
     @property
     def _all_files(self) -> FilesList:
-        "Retrieves both the preview file and the attachments, if any."
+        """
+        .. warning:: `(for internal purposes)`
+
+        :return: Both the preview file and the attachments, if any.
+        :rtype: list[:class:`.File`]
+        """
 
         return ([self.file] if self.file is not None else []) + self.attachments
 
 
     def before(self, date: datetime) -> bool:
-        "Verifies if the post was published before a certain date."
+        """
+        Verifies if the post was published before a certain date.
+
+        :return: The result of ``Post.published < date``
+        :rtype: :class:`bool`
+        """
 
         return self.published < date
 
 
     def since(self, date: datetime) -> bool:
-        "Verifies if the post was published after a certain date."
+        """
+        Verifies if the post was published since a certain date.
+
+        :return: The result of ``Post.published >= date``
+        :rtype: :class:`bool`
+        """
 
         return self.published >= date
 
@@ -184,12 +231,18 @@ class Post:
              verbose: bool=True) -> bool:
         """
         Tries to save all the files in the post.
-        Returns `True` if successful, or `False` if not.
 
-        path: The optional path where to store all the files. If it ends with '/*', it will
-              use its default name inside such folder.
-        force: Wether to overwrite existing files
-        verbose: Wether to track progress.
+        :param path: The optional path where to store all the files. If it ends with '/*', it
+                     will use its default name inside such folder.
+        :param force: Wether to overwrite existing files
+        :param verbose: Wether to track progress.
+
+        :type path: Union[:class:`PathLike`, :class:`Path`, None]
+        :type force: :class:`bool`
+        :type verbose: :class:`bool`
+
+        :return: ``True`` if the download of `all` files was successful, or ``False`` if not.
+        :rtype: :class:`bool`
         """
 
         files = self._all_files
@@ -224,9 +277,13 @@ class Post:
 
     def fetch_comments(self) -> CommentsList:
         """
-        Fetches the comments of the post. This is designed for internal purposes, as it is
-        recommended to use the `comments` property instead.
-        However, it can also be used as-is to prevent using a potentially outdated field.
+        Fetches the comments of the post.
+        .. warning:: This is designed for internal purposes, as it is recommended to use 
+                     the :attr:`.comments` property instead.
+                     However, it can also be used as-is to prevent using a potentially outdated field.
+
+        :return: A list of the comments of this post.
+        :rtype: list[:class:`.Comment`]
         """
 
         response = get(f"/{self.service}/user/{self.creator_id}/post/{self.id}/comments")
@@ -240,9 +297,13 @@ class Post:
 
     def _fetch_flagged(self) -> bool:
         """
+        .. warning:: `(for internal purposes)`
         Checks with a request if a post is flagged for reimport.
         According to the docs, it should have status code of 200 if it is flagged, and
         404 if it's not.
+
+        :return: Wether or not the post is flagged for reimport.
+        :rtype: :class:`bool`
         """
 
         response = get(f"/{self.service}/user/{self.creator_id}/post/{self.id}/flag")
@@ -251,7 +312,11 @@ class Post:
 
     def _fetch_revisions(self) -> PostRevsList:
         """
+        .. warning:: `(for internal purposes)`
         Fetches a request all the revisions of the post.
+
+        :return: All the revisions of this post, if any.
+        :rtype: list[:class:`.PostRevision`]
         """
 
         response = get(f"/{self.service}/user/{self.creator_id}/post/{self.id}/revisions")

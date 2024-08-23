@@ -16,9 +16,13 @@ class FileHashResult:
     """
     Result used when querying for a file using its hash.
 
-    file: The file itself.
-    posts: All the normal posts where this file appears.
-    disc: All the discord messages where this file is.
+    :param file: The file itself.
+    :param posts: All the normal posts where this file appears.
+    :param disc: All the discord messages where this file is.
+
+    :type file: :class:`.File`
+    :type posts: list[:class:`.Post`]
+    :type disc: list[:class:`.DiscordMessage`]
     """
 
     file: Optional["File"]
@@ -28,6 +32,10 @@ class FileHashResult:
 
     @classmethod
     def empty(cls) -> "FileHashResult":
-        "Returns an empty instance."
+        """
+        :return: An instance of the result with empty fields.
+
+        :rtype: :class:`.FileHashResult`
+        """
 
         return cls(None, [], [])

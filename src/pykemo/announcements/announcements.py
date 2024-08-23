@@ -12,19 +12,28 @@ if TYPE_CHECKING:
     from ..creators import Creator
 
 ANN_DATE_FMT: str = r"%Y-%m-%dT%H:%M:%S.%f"
+"The default format for announcements dates."
 
 
 @dataclass(kw_only=True)
 class Announcement:
     """
     Announcement tied to a creator. Mainly used in users with Patreon service.
+    Instances of this class are usually created through :attr:`Creator.announcements`.
 
-    service: The service of the creator that made this announcement. Tipically Patreon.
-    creator_id: The id of this announcement's creator.
-    ann_hash: The hash of the announcement.
-    content: The actual contents of the announcement. May contain HTML tags.
-    added: When was this announcement made.
-    creator: The creator of this announcement.
+    :param service: The service of the creator that made this announcement. Tipically Patreon.
+    :param creator_id: The id of this announcement's creator.
+    :param ann_hash: The hash of the announcement.
+    :param content: The actual contents of the announcement. May contain HTML tags.
+    :param added: When was this announcement made.
+    :param creator: The creator of this announcement.
+
+    :type service: :class:`.ServiceType`
+    :type creator_id: :class:`str`
+    :type ann_hash: :class:`str`
+    :type content: :class:`str`
+    :type added: :class:`datetime.datetime`
+    :type creator: :class:`.Creator`
     """
 
     service: ServiceType
@@ -39,6 +48,9 @@ class Announcement:
     def from_dict(cls, **fields) -> "Announcement":
         """
         Initializes an Announcement instance from a response fields.
+
+        :return: An instace of an announcement.
+        :rtype: :class:`.Announcement`
         """
 
         return cls(

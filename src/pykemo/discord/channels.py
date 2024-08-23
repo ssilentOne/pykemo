@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 ChannelsList: TypeAlias = list["DiscordChannel"]
 
 OFFSET_STEPPING: int = 150
-"Offset stepping enforced by the API."
+"Offset stepping enforced by the API when querying Discord channels."
 
 
 @dataclass(kw_only=True)
@@ -31,9 +31,13 @@ class DiscordChannel:
     """
     A channel that belongs to a Discord server/guild.
 
-    id: The ID of the channel. The same the Discord API uses.
-    channel_name: The display name of the channel.
-    owner: The creator that owns this server. Its ID is the same as the creator's.
+    :param id: The ID of the channel. The same the Discord API uses.
+    :param channel_name: The display name of the channel.
+    :param owner: The creator that owns this server. Its ID is the same as the creator's.
+
+    :type id: :class:`str`
+    :type channel_name: :class:`str`
+    :type owner: :class:`.Creator`
     """
 
     id: str
@@ -45,6 +49,9 @@ class DiscordChannel:
     def from_dict(cls, **fields) -> "DiscordChannel":
         """
         Initializes a DiscordChannel instance from a response fields.
+
+        :return: A channel instance.
+        :rtype: :class:`.DiscordChannel`
         """
 
         return cls(
@@ -59,6 +66,9 @@ class DiscordChannel:
         """
         The ID of the server this channel lives in. By definition, it's the same
         as the creator's ID.
+
+        :return: The server's `(the creator's, really)` ID.
+        :rtype: :class:`str`
         """
 
         return self.owner.id
@@ -66,7 +76,12 @@ class DiscordChannel:
 
     @property
     def url(self) -> "UrlLike":
-        "Retrieves the URL of the channel."
+        """
+        Retrieves the URL of the channel.
+
+        :return: The full URL of the channel.
+        :rtype: :type:`.urlLike`
+        """
 
         return f"{UrlType.SITE}/discord/server/{self.server_id}#{self.id}"
 
@@ -80,13 +95,22 @@ class DiscordChannel:
         """
         Retrieve the messages of this channel.
 
-        max_msg: The max number of posts to look through. This is NOT necessarily the number of
-                   posts to enter the lists.
-        before: Include only posts before this date.
-        since: Include only posts after and including this date.
-        asynchronous: Wether to use asynchronous requests to maybe boost performance. It's really
-                      only recommended with queries of no more than 350 posts. Too many queries
-                      overwhelms the server and it actually slows the request down.
+        :param max_msg: The max number of posts to look through. This is NOT necessarily the number
+                        of posts to enter the lists.
+        :param before: Include only posts before this date.
+        :param since: Include only posts after and including this date.
+        :param asynchronous: Wether to use asynchronous requests to maybe boost performance.
+                             It's really only recommended with queries of no more than 350 posts.
+                             Too many queries overwhelms the server and it actually slows the
+                             request down.
+
+        :type max_msg: Optional[:class:`int`]
+        :type before: Optional[:class:`datetime.datetime`]
+        :type since: Optional[:class:`datetime.datetime`]
+        :type asynchronous: :class:`bool`
+
+        :return: A list of the messages of the channel that fit the filters.
+        :rtype: list[:class:`.DiscordMessage`]
         """
 
         if max_msg is not None and max_msg <= 0:

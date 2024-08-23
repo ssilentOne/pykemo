@@ -9,7 +9,7 @@ class UrlType(StrEnum):
     """
     Types of URL endpoints.
 
-    The DATA type can be further formatted into different servers.
+    .. note:: The DATA type can be further formatted into different servers. It may not be used as-is.
     """
 
     SITE = "https://kemono.su"

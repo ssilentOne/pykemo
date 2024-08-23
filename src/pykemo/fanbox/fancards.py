@@ -21,19 +21,33 @@ class Fancard:
     They have an image inside and as such their working are similar to the `File` type, but
     they both have different fields.
 
-    id: The ID of this fancard.
-    creator_id: The ID of this fancard's creator.
-    creator: The creator of this fancard.
-    file_id: The ID of this fancard's associated file.
-    file_size: The size of the fancard's file size.
-    file: The file of this fancard.
-    price: General price tag for the tier this fancard belongs to.
-    fhash: The hash of this fancard.
-    ihash: The iterative hash of this fancard. Usually `None`.
-    last_checked: When was this fancard last revised.
-    added: When was this fancard first added.
-    mtime: Dark magic. Dunno why it's there, but data is data, I guess.
-    ctime: Dark magic. Dunno why it's there, but data is data, I guess.
+    :param id: The ID of this fancard.
+    :param creator_id: The ID of this fancard's creator.
+    :param creator: The creator of this fancard.
+    :param file_id: The ID of this fancard's associated file.
+    :param file_size: The size of the fancard's file size.
+    :param file: The file of this fancard.
+    :param price: General price tag for the tier this fancard belongs to.
+    :param fhash: The hash of this fancard.
+    :param ihash: The iterative hash of this fancard. Usually `None`.
+    :param last_checked: When was this fancard last revised.
+    :param added: When was this fancard first added.
+    :param mtime: `Dark magic. Dunno why it's there, but data is data, I guess.`
+    :param ctime: `Dark magic. Dunno why it's there, but data is data, I guess.`
+
+    :type id: :class:`str`
+    :type creator_id: :class:`str`
+    :type creator: :class:`.Creator`
+    :type file_id: :class:`str`
+    :type file_size: :class:`int`
+    :type file: :class:`.File`
+    :type price: :class:`str`
+    :type fhash: :class:`str`
+    :type ihash: Optional[:class:`str`]
+    :type last_checked: :class:`datetime.datetime`
+    :type added: :class:`datetime.datetime`
+    :type mtime: :class:`datetime.datetime`
+    :type ctime: :class:`datetime.datetime`
     """
 
     id: str
@@ -55,6 +69,9 @@ class Fancard:
     def from_dict(cls, **fields) -> "Fancard":
         """
         Initializes a Fancard instance from a response fields.
+
+        :return: A fancard instance.
+        :rtype: :class:`.Fancard`
         """
 
         creator: "Creator" = fields.get("creator")

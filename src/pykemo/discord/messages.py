@@ -23,17 +23,29 @@ class DiscordMessage:
     """
     A discord message inside a channel.
 
-    id: The ID of the message itself.
-    author: The user that authored the message
-    server_id: The ID of the server this messages lives in.
-    channel: The channel where this message is within the server.
-    content: The actual text contents of the message.
-    added: When was the message added to the database that this API refers to.
-    published: When was the message originally published.
-    edited: When was this message edited, if it ever was.
-    embeds: List of embeds of the message.
-    mentions: List of potential mentions the message makes.
-    attachments: The files this message has.
+    :param id: The ID of the message itself.
+    :param author: The user that authored the message
+    :param server_id: The ID of the server this messages lives in.
+    :param channel: The channel where this message is within the server.
+    :param content: The actual text contents of the message.
+    :param added: When was the message added to the database that this API refers to.
+    :param published: When was the message originally published.
+    :param edited: When was this message edited, if it ever was.
+    :param embeds: List of embeds of the message.
+    :param mentions: List of potential mentions the message makes.
+    :param attachments: The files this message has.
+
+    :type id: :class:`str`
+    :type author: Optional[:class:`.DiscordUser`]
+    :type server_id: :class:`str`
+    :type channel: :class:`.DiscordChannel`
+    :type content: :class:`str`
+    :type added: Optional[:class:`datetime.datetime`]
+    :type published: :class:`datetime.datetime`
+    :type edited: Optional[:class:`datetime.datetime`]
+    :type embeds: :class:`list`
+    :type mentions: :class:`list`
+    :type attachments: list[:class:`File`]
     """
 
     id: str
@@ -53,6 +65,9 @@ class DiscordMessage:
     def from_dict(cls, **fields) -> "DiscordMessage":
         """
         Initializes a DiscordMessage instance from a response fields.
+
+        :return: A message instance.
+        :rtype: :class:`.DiscordMessage`
         """
 
         author_fields = fields.get("author", None)
@@ -77,12 +92,30 @@ class DiscordMessage:
 
 
     def before(self, date: datetime) -> bool:
-        "Verifies if the message was published before a certain date."
+        """
+        Verifies if the message was published before a certain date.
+
+        :param date: The date to evaluate.
+
+        :type date: :class:`datetime.datetime`
+
+        :return: The result of ``DiscordMessage.published < date``
+        :rtype: :class:`bool`
+        """
 
         return self.published < date
 
 
     def since(self, date: datetime) -> bool:
-        "Verifies if the message was published after a certain date."
+        """
+        Verifies if the message was published after a certain date.
+
+        :param date: The date to evaluate.
+
+        :type date: :class:`datetime.datetime`
+
+        :return: The result of ``DiscordMessage.published < date``
+        :rtype: :class:`bool`
+        """
 
         return self.published >= date

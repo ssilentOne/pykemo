@@ -21,16 +21,27 @@ DEFAULT_COMMENT_DATE_FMT: str = r"%Y-%m-%dT%H:%M:%S"
 class Comment:
     """
     Comment of a post.
+    Usually instantiated through :attr:`Post.comments`
 
-    id: The ID of the comment itself.
-    parent_id: The ID of the parent comment. Used when the comment itself is a response to another.
-    commenter_id: The ID of the author of the comment.
-    commenter_name: The name of the author of the comment
-    content: The actual content of the comment.
-    published: When was the comment created.
-    revisions: Subsequent edits of the comment.
-    commenter: The creator of this comment.
-    post: The parent post this comment belongs to.
+    :param id: The ID of the comment itself.
+    :param parent_id: The ID of the parent comment. Used when the comment itself is a response to another.
+    :param commenter_id: The ID of the author of the comment.
+    :param commenter_name: The name of the author of the comment
+    :param content: The actual content of the comment.
+    :param published: When was the comment created.
+    :param revisions: Subsequent edits of the comment.
+    :param commenter: The creator of this comment.
+    :param post: The parent post this comment belongs to.
+
+    :type id: :class:`str`
+    :type parent_id: Optional[:class:`str`]
+    :type commenter_id: :class:`str`
+    :type commenter_name: :class:`str`
+    :type content: :class:`str`
+    :type published: :class:`datetime.datetime`
+    :type revisions: list[:class:`.CommentRevision`]
+    :type commenter: :class:`.Creator`
+    :type post: :class:`.Post`
     """
 
     id: str
@@ -48,6 +59,9 @@ class Comment:
     def from_dict(cls, **fields) -> "Comment":
         """
         Initializes a Comment instance from a response fields.
+
+        :return: An instace of an comment.
+        :rtype: :class:`.Comment`
         """
 
         return cls(
@@ -65,6 +79,9 @@ class Comment:
 
     @property
     def url(self) -> "UrlLike":
-        "The direct URL of the comment."
+        """
+        :return: The direct URL of the comment.
+        :rtype: :type:`.UrlLike`
+        """
 
         return f"{self.post.url}#{self.id}"

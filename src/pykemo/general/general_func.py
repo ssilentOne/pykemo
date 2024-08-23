@@ -23,7 +23,14 @@ MAX_POSTS_LIMIT: int = 1000
 
 def get_creators() -> CreatorsList:
     """
-    Gets ALL the creators.
+    Gets all the creators.
+
+    .. warning:: There is currently no limitations to this function. It will really try to fetch
+                 **ALL the creators on the site**. If you do not explicitly need this, do not use
+                 this.
+
+    :returns: The list of all creators.
+    :rtype: list[:class:`.Creator`]
     """
 
     response = get("/creators.txt")
@@ -43,11 +50,16 @@ def get_posts(query: Optional[str]=None,
     """
     Gets all posts that coincide with the given parameters.
 
-    query: A query string to use in the search.
-    max_posts: The max number of posts to look through. This is NOT necessarily the number of
-               posts to enter the lists.
-    before: Include only posts before this date.
-    since: Include only posts after and including this date.
+    :param query: A query string to use in the search.
+    :param max_posts: The max number of posts to look through. This is NOT necessarily
+                      the number of posts to enter the lists.
+    :param before: Include only posts before this date.
+    :param since: Include only posts after and including this date.
+
+    :type query: Optional[:class:`str`]
+    :type max_posts: :class:`int`
+    :type before: Optional[:class:`datetime.datetime`]
+    :type since: Optional[:class:`datetime.datetime`]
     """
 
     if max_posts is not None and (max_posts <= 0 or max_posts > MAX_POSTS_LIMIT):
@@ -75,7 +87,15 @@ def get_posts(query: Optional[str]=None,
 def get_creator(service: "ServiceLike", creator_id: str) -> Optional[Creator]:
     """
     Tries to retrieve a creator with the given ID and service.
-    Returns `None` if it does not find it.
+
+    :param service: The service of the creator.
+    :param creator_id: The ID of the creator.
+
+    :type service: :type:`.ServiceLike`
+    :type creator_Id: :class:`str`
+
+    :return: The creator instance, if found. Otherwise returns ``None``.
+    :rtype: Optional[:class:`.Creator`]
     """
 
     return Creator.from_profile(service, creator_id)
@@ -83,8 +103,17 @@ def get_creator(service: "ServiceLike", creator_id: str) -> Optional[Creator]:
 
 def get_creator_links(service: "ServiceLike", creator_id: str) -> CreatorsList:
     """
-    Retrieves a list that is the other accounts of a creator, should it have any in
+    Retrieves a list that is the other accounts of a creator, should it have any with
     other services, for example.
+
+    :param service: The service of the creator.
+    :param creator_id: The ID of the creator.
+
+    :type service: :type:`.ServiceLike`
+    :type creator_Id: :class:`str`
+
+    :return: A list of the creators associated with this one.
+    :rtype: list[:class:`.Creator`]
     """
 
     return get_creator(service, creator_id).other_links()
@@ -93,6 +122,13 @@ def get_creator_links(service: "ServiceLike", creator_id: str) -> CreatorsList:
 def get_file_hash(hash: str) -> FileHashResult:
     """
     Search a file by hash. Also tries to retrieve posts where such file is present.
+
+    :param hash: The query hash to search with.
+
+    :type hash: :class:`str`
+
+    :return: The result of the query.
+    :rtype: :class:`.FileHashResult`
     """
 
     response = get(f"/search_hash/{hash}")
@@ -132,7 +168,8 @@ def get_file_hash(hash: str) -> FileHashResult:
 
 def get_app_version() -> str:
     """
-    Retrieves the last commit hash of the API.
+    :return: The last commit hash of the API.
+    :rtype: :class:`str`
     """
 
     return get("/app_version").text

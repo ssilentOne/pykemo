@@ -38,12 +38,21 @@ class Creator:
     """
     Container class for a creator.
 
-    id: It is the ID of the creator.
-    name: It is the given name of the creator.
-    service: The service that provides the content.
-    indexed: Datetime that expresses when the creator is indexed.
-    updated: Datetime that expresses when the creator was last updated.
-    favorited: A integer displaying how many have favorited this creator.
+    :param id: It is the ID of the creator.
+    :param name: It is the given name of the creator.
+    :param service: The service that provides the content.
+    :param indexed: Datetime that expresses when the creator is indexed.
+    :param updated: Datetime that expresses when the creator was last updated.
+    :param public_id: The public ID that the creator shows.
+    :param favorited: A integer displaying how many have favorited this creator.
+
+    :type id: :class:`str`
+    :type name: Optional[:class:`str`]
+    :type service: :class:`.ServiceType`
+    :type indexed: :class:`datetime.datetime`
+    :type updated: :class:`datetime.datetime`
+    :type public_id: Optional[:class:`str`]
+    :type favorited: Optional[:class:`int`]
     """
 
     id: str
@@ -69,6 +78,9 @@ class Creator:
     def from_dict(cls, **fields: CreatorDict) -> "Creator":
         """
         Initializes a creator from a dictionary containing its properties.
+
+        :return: An instance of a creator.
+        :rtype: :class:`Creator`
         """
 
         date_fmt = rf"{DEFAULT_DATE_FMT}.%f"
@@ -88,6 +100,15 @@ class Creator:
     def from_profile(cls, service: "ServiceLike", creator_id: str) -> Optional["Creator"]:
         """
         Retrieves a creator using its profile info.
+
+        :param service: The service of the creator.
+        :param creator_id: The ID of the creator.
+
+        :type service: :type:`ServiceLike`
+        :type creator_id: :class:`str`
+
+        :return: If the creator is found, retrieve and create a :class:`Creator` instance, otherwise return ``None``.
+        :rtype: Optional[:class:`Creator`]
         """
 
         creator_response = get(f"/{service}/user/{creator_id}/profile")
@@ -103,6 +124,9 @@ class Creator:
         """
         Gets a list of the creator's announcements, if any. Mainly relevant for
         Patreon service.
+
+        :return: A list of the creator's announcements, if any.
+        :rtype: list[:class:`.Announcement`]
         """
 
         if not self.__ann_loaded:
@@ -115,8 +139,12 @@ class Creator:
     @property
     def fancards(self) -> FancardsList:
         """
-        Gets a list of the fancards associated with this creator. If not from a Fanbox service,
-        it will return an empty list instead.
+        Gets a list of the fancards associated with this creator.
+
+        .. note:: If not from a Fanbox service, it will return an empty list instead.
+
+        :return: A list of the creator's fancards, if any.
+        :rtype: list[:class:`.Fancard`]
         """
 
         if not self.__fanc_loaded:
@@ -129,9 +157,13 @@ class Creator:
     @property
     def channels(self) -> ChannelsList:
         """
-        Gets all the Discord channels associated with this creator. Only really works if the
-        service is Discord, returns an empty list if not.
+        Gets all the Discord channels associated with this creator.
         This is because the ID of a Discord 'creator', is really the ID of a Discord server/guild.
+
+        .. note:: Only really works if the service is Discord, returns an empty list if not.
+
+        :return: A list of the creator's associated Discord channels, if any.
+        :rtype: list[:class:`.DiscordChannel`]
         """
 
         if not self.__chan_loaded:
@@ -144,7 +176,8 @@ class Creator:
     @property
     def url(self) -> "UrlLike":
         """
-        Retrieves the URL of the creator.
+        :return: The full URL of the creator.
+        :rtype: :type:`.UrlLike`
         """
 
         return f"{UrlType.SITE}/{self.service}/user/{self.id}"
@@ -153,6 +186,9 @@ class Creator:
     def other_links(self) -> list["Creator"]:
         """
         Searches for other accounts of this creator.
+
+        :returns: Other instances of :class:`.Creator` associated to this one, if any.
+        :rtype: list[:class:`.Creator`]
         """
 
         link_response = get(f"/{self.service}/user/{self.id}/links")
@@ -178,14 +214,22 @@ class Creator:
         Retrieves posts under this creator. If the creator is from Discord, it won't retrieve any,
         as that service doesn't use 'posts'.
 
-        query: The string to search for specific posts.
-        max_posts: The max number of posts to look through. This is NOT necessarily the number of
-                   posts to enter the lists. If `None`, it will try to retrieve ALL the posts.
-        before: Include only posts before this date.
-        since: Include only posts after and including this date.
-        asynchronous: Wether to use asynchronous requests to maybe boost performance. It's really
-                      only recommended with queries of no more than 350 posts. Too many queries
-                      overwhelms the server and it actually slows the request down.
+        :param query: The string to search for specific posts.
+        :param max_posts: The max number of posts to look through. This is NOT necessarily the number of posts to enter the lists. If `None`, it will try to retrieve ALL the posts.
+        :param before: Include only posts before this date.
+        :param since: Include only posts after and including this date.
+        :param asynchronous: Wether to use asynchronous requests to maybe boost performance. It's really only recommended with queries of no more than 350 posts. Too many queries overwhelms the server and it actually slows the request down.
+
+        :type query: Optional[:class:`str`]
+        :type max_posts: Optional[:class:`int`]
+        :type before: Optional[:class:`datetime.datetime`]
+        :type since: Optional[:class:`datetime.datetime`]
+        :type asynchronous: :class:`bool`
+
+        :raises ValueError: If ``max_posts`` is negative or zero.
+
+        :return: A list of posts that fit the filters.
+        :rtype: list[:class:`.Post`]
         """
 
         if max_posts is not None and max_posts <= 0:
@@ -215,6 +259,13 @@ class Creator:
     def get_post(self, post_id: str) -> Optional[Post]:
         """
         Get a specific post by its ID.
+
+        :param post_id: The ID of the post in question.
+
+        :type post_id: :class:`str`
+
+        :return: The post, if found. Otherwise returns ``None``.
+        :rtype: Optional[`.Post`]
         """
 
         response = get(f"/{self.service}/user/{self.id}/post/{post_id}")
@@ -227,7 +278,12 @@ class Creator:
 
     def _fetch_announcements(self) -> AnnouncementsList:
         """
-        Fetches a request with the creator's announcements.
+        .. warning:: `(for internal purposes)`
+        Fetches a request with the creator's announcements. This means that, unlike
+        :attr:`.announcements`, this reloads the announcements again.
+
+        :return: A list of announcements.
+        :rtype: list[:class:`.Announcement`]
         """
 
         response = get(f"/{self.service}/user/{self.id}/announcements")
@@ -242,8 +298,13 @@ class Creator:
 
     def _fetch_fancards(self) -> FancardsList:
         """
-        Fetches a request with the creator's fancards.
-        If the service is not Fanbox, it will return an empty list instead.
+        .. warning:: `(for internal purposes)`
+        Fetches a request with the creator's fancards. Unlike :attr:`.fancards`,
+        this reloads the fancards again.
+        .. note:: If the service is not Fanbox, it will return an empty list instead.
+
+        :return: A list of fancards.
+        :rtype: list[:class:`.Fancard`]
         """
 
         fancards = []
@@ -259,14 +320,23 @@ class Creator:
 
 
     def _get_channels_response(self) -> "Response":
-        "Gets the channels request."
+        """
+        .. warning:: `(for internal purposes)`
+        Gets the channels request.
+
+        :return: The response of the channels' lookup.
+        :rtype: `Response <https://requests.readthedocs.io/en/latest/api/#requests.Response>`_
+        """
 
         return get(f"/discord/channel/lookup/{self.id}")
 
 
     def fetch_channels(self) -> ChannelsList:
         """
-        Fetches a request for Discord channels, if available.
+        Fetches a request for Discord channels, if available. 
+
+        :return: A list of channels.
+        :rtype: list[:class:`.DiscordChannel`]
         """
 
         channels = []
@@ -282,7 +352,16 @@ class Creator:
 
 
     def get_channel(self, channel_id: str) -> Optional[DiscordChannel]:
-        "Fetches a specific channel of this creator by id."
+        """
+        Fetches a specific channel of this creator by id.
+
+        :param channel_id: The ID of the channel to find.
+
+        :type channel_id: :class:`str`
+
+        :return: The channel in question, if found. Otherwise returns ``None``.
+        :rtype: Optional[:class:`.DiscordChannel`]
+        """
 
         for chan_fields in self._get_channels_response().json():
             if chan_fields.get("id") == channel_id:

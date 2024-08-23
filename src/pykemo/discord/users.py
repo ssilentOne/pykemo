@@ -12,20 +12,33 @@ from ..files import File
 @dataclass(kw_only=True)
 class DiscordUser:
     """
-    A discord user. Has different properties than that of `Creator`.
+    A discord user. Not to be confused with :class:`.Creator`, as they have different properties.
 
-    id: The ID of the Discord user. The same the Discord API uses.
-    username: The specific username that the user utilizes in this guild.
-    global_name: The global name the Discord user has.
-    discriminator: The discriminator of the Discord user, if any (they are not really used anymore).
-    avatar: The avatar file.
-    avatar_decoration_data: Aditional avatar info.
-    clan: I guess this refers to the HypeSquad clans.
-    accent_color: The accent color that the user chooses.
-    banner: The banner of the user profile.
-    banner_color: The accent color for the banner itself.
-    flags: The flags in this guild.
-    public_flags: The flags globally.
+    :param id: The ID of the Discord user. The same the Discord API uses.
+    :param username: The specific username that the user utilizes in this guild.
+    :param global_name: The global name the Discord user has.
+    :param discriminator: The discriminator of the Discord user, if any (they are not really used anymore).
+    :param avatar: The avatar file.
+    :param avatar_decoration_data: Aditional avatar info.
+    :param clan: I guess this refers to the HypeSquad clans.
+    :param accent_color: The accent color that the user chooses.
+    :param banner: The banner of the user profile.
+    :param banner_color: The accent color for the banner itself.
+    :param flags: The flags in this guild.
+    :param public_flags: The flags globally.
+
+    :type id: :class:`str`
+    :type username: :class:`str`
+    :type global_name: :class:`str`
+    :type discriminator: :class:`str`
+    :type avatar: :class:`.File`
+    :type avatar_decoration_data: Optional[:class:`Any`]
+    :type clan: Optional[:class:`Any`]
+    :type accent_color: Optional[:class:`str`]
+    :type banner: Optional[:class:`Any`]
+    :type banner_color: Optional[:class:`str`]
+    :type flags: :class:`int`
+    :type public_flags: :class:`int`
     """
 
     id: str
@@ -46,6 +59,9 @@ class DiscordUser:
     def from_dict(cls, **fields) -> "DiscordUser":
         """
         Initializes a DiscordUser instance from a response fields.
+
+        :return: A user instance.
+        :rtype: :class:`DiscordUser`
         """
 
         user_id = fields.get("id")

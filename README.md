@@ -20,6 +20,8 @@ Python library binding to the [Kemono API](https://kemono.su/api/schema).
 <br/>
 <br/>
 <br/>
+<br/>
+<br/>
 
 It has the following features:
 
@@ -124,7 +126,7 @@ The [dependencies](./requirements.txt) are as follows:
 
 | Name | Version | Rationale |
 | :-: | :-: | :-: |
-| [grequests](https://pypi.org/project/grequests/) | 0.7.0 | For doing the asynchronous requests. |
+| [grequests](https://pypi.org/project/grequests/) | 0.7.0 | For doing asynchronous requests. |
 | [requests](https://pypi.org/project/requests/) | 2.32.3 | The base library for doing HTTP requests. |
 | [tqdm](https://pypi.org/project/tqdm/) | 4.66.4 | QoL library for showing fancy loading bars in downloads. |
 
@@ -132,9 +134,7 @@ The [dependencies](./requirements.txt) are as follows:
 
 # Documentation
 
-All the docs for every version of pykemo are hosted on **ReadTheDocs**:
-
-* link: https://pykemo.readthedocs.io/en/latest/
+All the docs for every version of pykemo are [here](https://pykemo.readthedocs.io/en/latest/).
 
 <hr style="height:3px; width:50%" />
 
@@ -150,8 +150,9 @@ $ pip install pykemo-0.5.1-py3-none-any.whl
 ```
 
 ## From source
-You may download this repo as a source and install that. And even, supposing you have `git`
-installed, you can download and install from the URL:
+If you prefer nightly instances, you may also download this repo as a source and install that to
+have the latest versions _(they may not be stable)_.
+And even, supposing you have `git`installed, you can download and install from the URL:
 ```console
 $ pip install git+https://github.com/ssilentOne/pykemo.git
 ```

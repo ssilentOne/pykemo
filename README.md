@@ -15,7 +15,7 @@
 ![stars](https://img.shields.io/github/stars/ssilentOne/pykemo?label=Stars&style=social)
 ![views](https://img.shields.io/github/watchers/ssilentOne/pykemo?label=Views&style=social)
 
-Python library binding to the [Kemono API](https://kemono.su/api/schema).
+Python library binding to the [Kemono API](https://kemono.su/documentation/api).
 
 <br/>
 <br/>
@@ -151,7 +151,7 @@ $ pip install pykemo-0.5.1-py3-none-any.whl
 
 ## From source
 If you prefer nightly instances, you may also download this repo as a source and install that to
-have the latest versions _(they may not be stable)_.
+have the latest versions _(it may not be stable)_.
 And even, supposing you have `git`installed, you can download and install from the URL:
 ```console
 $ pip install git+https://github.com/ssilentOne/pykemo.git

@@ -2,7 +2,7 @@ Welcome to Pykemo's documentation!
 ===================================
 
 Pykemo is a Python library that effectively functions as a binding to the
-`Kemono API <https://kemono.su/api/schema>`_.
+`Kemono API <https://kemono.su/documentation/api>`_.
 
 .. dropdown:: Examples
 

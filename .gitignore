@@ -1,6 +1,3 @@
-# Created by https://www.toptal.com/developers/gitignore/api/python
-# Edit at https://www.toptal.com/developers/gitignore?templates=python
-
 ### Python ###
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -174,3 +171,8 @@ poetry.toml
 pyrightconfig.json
 
 # End of https://www.toptal.com/developers/gitignore/api/python
+
+## Custom bits ##
+
+# This is really an internal file to keep track of what to do if I come back after a long time.
+todo.md

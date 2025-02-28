@@ -114,7 +114,7 @@ class DiscordMessage:
 
         :type date: :class:`datetime.datetime`
 
-        :return: The result of ``DiscordMessage.published < date``
+        :return: The result of ``DiscordMessage.published >= date``
         :rtype: :class:`bool`
         """
 

@@ -20,7 +20,7 @@ from ..posts import DEFAULT_DATE_FMT, ELEMENTS_PER_PAGE, Post, PostsList
 from ..services import ServiceType
 
 if TYPE_CHECKING:
-    from requests import Response
+    from requests import Response, Session
 
     from ..core import UrlLike
     from ..services import ServiceLike
@@ -46,6 +46,7 @@ class Creator:
     :param updated: Datetime that expresses when the creator was last updated.
     :param public_id: The public ID that the creator shows.
     :param favorited: A integer displaying how many have favorited this creator.
+    :param relation_id: The relation ID of this creator.
 
     :type id: :class:`str`
     :type name: Optional[:class:`str`]
@@ -54,6 +55,7 @@ class Creator:
     :type updated: :class:`datetime.datetime`
     :type public_id: Optional[:class:`str`]
     :type favorited: Optional[:class:`int`]
+    :type relation_id: Optional[:class:`int`]
     """
 
     id: str
@@ -63,6 +65,7 @@ class Creator:
     updated: datetime = field(repr=False)
     public_id: Optional[str] = field(repr=False)
     favorited: Optional[int] = field(repr=False)
+    relation_id: Optional[int] = field(repr=False)
 
     #unloaded fields
     _announcements: AnnouncementsList = field(default_factory=list, init=False, repr=False)
@@ -93,7 +96,8 @@ class Creator:
             indexed=datetime.strptime(fields.get("indexed"), date_fmt),
             updated=datetime.strptime(fields.get("updated"), date_fmt),
             public_id=fields.get("public_id", None),
-            favorited=fields.get("favorited", None)
+            favorited=fields.get("favorited", None),
+            relation_id=fields.get("relation_id", None)
         )
 
 
@@ -210,6 +214,7 @@ class Creator:
               max_posts: Optional[int]=ELEMENTS_PER_PAGE,
               before: Optional[datetime]=None,
               since: Optional[datetime]=None,
+              session: Optional["Session"]=None,
               asynchronous: bool=False) -> PostsList:
         """
         Retrieves posts under this creator. If the creator is from Discord, it won't retrieve any,
@@ -219,12 +224,14 @@ class Creator:
         :param max_posts: The max number of posts to look through. This is NOT necessarily the number of posts to enter the lists. If `None`, it will try to retrieve ALL the posts.
         :param before: Include only posts before this date.
         :param since: Include only posts after and including this date.
+        :param session: The session to be used in the query.
         :param asynchronous: Wether to use asynchronous requests to maybe boost performance. It's really only recommended with queries of no more than 350 posts. Too many queries overwhelms the server and it actually slows the request down.
 
         :type query: Optional[:class:`str`]
         :type max_posts: Optional[:class:`int`]
         :type before: Optional[:class:`datetime.datetime`]
         :type since: Optional[:class:`datetime.datetime`]
+        :type session: Optional[:class:`Session <https://requests.readthedocs.io/en/latest/api/#requests.Session>`_]
         :type asynchronous: :class:`bool`
 
         :raises ValueError: If ``max_posts`` is negative or zero.
@@ -240,7 +247,8 @@ class Creator:
         response_bodies = posts_req(endpoint=f"/{self.service}/user/{self.id}",
                                     query=query,
                                     max_posts=max_posts,
-                                    page_stepping=ELEMENTS_PER_PAGE)
+                                    page_stepping=ELEMENTS_PER_PAGE,
+                                    session=session)
         posts_list = []
 
         for post_fields in response_bodies:

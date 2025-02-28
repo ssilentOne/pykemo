@@ -10,7 +10,8 @@ from grequests import map as async_map
 from ..core import async_get, get
 
 if TYPE_CHECKING:
-    from requests import Response
+    from requests import Response, Session
+    from typing import Iterable
 
     from ..core import UrlLike
     from ..files import FileDict
@@ -137,6 +138,31 @@ def since_date(date1: DateOrFmt,
     return process_date(date1, fmt1) >= process_date(date2, fmt2)
 
 
+def sanitize_str(src: str,
+                 forbidden: "Iterable",
+                 target: str) -> str:
+    """
+    Replaces all characters in 'src' with 'target' if said char is in 'forbidden'.
+
+    :param src: The source string to modify.
+    :param forbidden: The characters to look for and potentially replace.
+    :param target: The character to replace bad chars with.
+
+    :type src: :class:`str`
+    :type forbidden: :class:`Iterable`
+    :type target: :class:`str`
+
+    :return: A string with all bad characters replaced.
+    :rtype: :class:`str`
+    """
+
+    cpy = src
+    for bad_char in forbidden:
+        cpy = cpy.replace(bad_char, target)
+
+    return cpy
+
+
 def query_params(query: Optional[str]=None,
                  offset: Optional[int]=None,
                  stepping: int=0) -> ParamsFmtDict:
@@ -176,7 +202,8 @@ def get_posts_responses(*,
                         endpoint: "UrlLike",
                         query: Optional[str]=None,
                         max_posts: Optional[int]=None,
-                        page_stepping: int) -> list["Response"]:
+                        page_stepping: int,
+                        session: Optional["Session"]=None) -> list["Response"]:
     """
     Gets the responses of posts by page.
 
@@ -184,11 +211,13 @@ def get_posts_responses(*,
     :param query: A search query string to filter the results.
     :param max_posts: The max posts to fit into the final list.
     :param page_stepping: The stepping of the paging.
+    :param session: The session to make the requests with.
 
     :type endpoint: :type:`UrlLike`
     :type query: Optional[:class:`str`]
     :type max_posts: Optional[:class:`int`]
     :type page_stepping: :class:`int`
+    :type session: Optional[:class:`Session <https://requests.readthedocs.io/en/latest/api/#requests.Session>`_]
 
     :return: A list of :class:`requests.Response`, to be further processed.
     :rtype: list[`Response <https://requests.readthedocs.io/en/latest/api/#requests.Response>`_]
@@ -199,11 +228,14 @@ def get_posts_responses(*,
     if max_posts is None: # Try to get ALL the posts
         cur_page = 0
         while True:
-            page_response = get(endpoint,
-                                params=query_params(query,
-                                                    cur_page * page_stepping,
-                                                    page_stepping))
-            if page_response.status_code != 429:
+            page_response = get(
+                endpoint,
+                params=query_params(query,
+                                    cur_page * page_stepping,
+                                    page_stepping),
+                session=session
+            )
+            if page_response is not None and page_response.status_code != 429:
                 responses.extend(page_response.json())
 
             if  not page_response.json():
@@ -214,13 +246,16 @@ def get_posts_responses(*,
     else:
         n_pages = (max_posts // page_stepping) + 1 # one more for the surplus
         for page in range(n_pages):
-            page_response = get(endpoint,
-                                params=query_params(query,
-                                                    page * page_stepping,
-                                                    page_stepping))
+            page_response = get(
+                endpoint,
+                params=query_params(query,
+                                    page * page_stepping,
+                                    page_stepping),
+                session=session
+            )
 
             # by this point, one would expect this to be a list of posts
-            if page_response.status_code != 429:
+            if page_response is not None and page_response.status_code != 429:
                 responses.extend(page_response.json())
 
     return responses
@@ -231,7 +266,8 @@ def async_get_posts_responses(*,
                               query: Optional[str]=None,
                               max_posts: Optional[int]=None,
                               page_stepping: int,
-                              batch_send_size: Optional[int]=None) -> list["Response"]:
+                              batch_send_size: Optional[int]=None,
+                              session: Optional["Session"]=None) -> list["Response"]:
     """
     Gets the asynchronous responses of posts by page.
 
@@ -240,12 +276,14 @@ def async_get_posts_responses(*,
     :param max_posts: The max posts to fit into the final list.
     :param page_stepping: The stepping of the paging.
     :param batch_send_size: The size by which to send asynchrnous requests at the same time per batch.
+    :param session: The session to make the requests with.
 
     :type endpoint: :type:`UrlLike`
     :type query: Optional[:class:`str`]
     :type max_posts: Optional[:class:`int`]
     :type page_stepping: :class:`int`
     :type batch_send_size: Optional[:class:`int`]
+    :type session: Optional[:class:`Session <https://requests.readthedocs.io/en/latest/api/#requests.Session>`_]
 
     :return: A list of :class:`requests.Response`, to be further processed.
     :rtype: list[`Response <https://requests.readthedocs.io/en/latest/api/#requests.Response>`_]
@@ -264,29 +302,33 @@ def async_get_posts_responses(*,
                     endpoint,
                     params=query_params(query,
                                         cur_page * page_stepping,
-                                        page_stepping))
+                                        page_stepping),
+                    session=session
+                )
                 req_batch.append(page_async_req)
                 cur_page += 1
 
             res_batch = async_map(req_batch, size=send_size)
 
             for page_response in res_batch:
-                if page_response.status_code != 429:
+                if page_response is not None and page_response.status_code != 429:
                     responses.extend(page_response.json())
                     if not page_response.json():
                         exit_flag = True
 
     else:
         n_pages = (max_posts // page_stepping) + 1 # one more for the surplus
-        req_batch = (async_get(endpoint,
-                                params=query_params(query,
-                                                    page * page_stepping,
-                                                    page_stepping))
+        req_batch = (async_get(
+            endpoint,
+            params=query_params(query,
+                                page * page_stepping,
+                                page_stepping),
+            session=session)
                     for page in range(n_pages))
         res_batch = async_map(req_batch, size=send_size)
 
         for res in res_batch:
-            if res.status_code != 429:
+            if (res is not None) and res.status_code != 429:
                 responses.extend(res.json())
 
     return responses

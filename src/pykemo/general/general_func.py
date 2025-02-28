@@ -1,5 +1,5 @@
 """
-Module for auxilair functions.
+Module for auxiliar functions.
 """
 
 from typing import TYPE_CHECKING, Optional

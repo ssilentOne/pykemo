@@ -35,31 +35,52 @@ ADAPTER_PREFIX: UrlLike = "https://"
 "A prefix for URLs that trigger the custom HTTP adapter."
 
 
-def request(method: str, endpoint: UrlLike, url_type: UrlType=UrlType.API, **kwargs) -> "Response":
+def request(method: str,
+            endpoint: UrlLike,
+            url_type: UrlType=UrlType.API,
+            session: Optional[Session]=None,
+            **kwargs) -> "Response":
     """
     A customized wrap for `requests.Session.request() <https://requests.readthedocs.io/en/latest/api/#requests.Session.request>_`, with static url and its own session.
 
     :param method: The HTTP method to use.
     :param endpoint: The endpoint to map to.
     :param url_type: The root URL to use.
+    :param session: The session to use. If not provided, it will use a generic one.
+                    If the user provided its own session it's their responsability to close it
+                    afterwards.
 
     :type method: :class:`str`
     :type endpoint: :type:`.UrlLike`
     :type url_type: Optional[:class:`.UrlType`]
+    :type session: Optional[`Session <https://requests.readthedocs.io/en/latest/api/#requests.Session>`_]
 
     :return: The HTTP response.
     :rtype: `Response <https://requests.readthedocs.io/en/latest/api/#requests.Response>`_
     """
 
-    with Session() as session:
+    close_after = False
+
+    if session is None:
+        close_after = True
+        session = Session()
         session.mount(ADAPTER_PREFIX, HTTPAdapter(max_retries=Retry(total=MAX_RETRIES,
                                                                     backoff_factor=BACKOFF_FACTOR,
                                                                     status_forcelist=FORCELIST)))
-        res = session.request(method=method, url=f"{url_type}{endpoint}", **kwargs)
+    res = session.request(method=method, url=f"{url_type}{endpoint}", **kwargs)
+
+    if close_after:
+        # we clean up after ourselves in this house
+        session.close()
+
     return res
 
 
-def async_request(method: str, endpoint: UrlLike, url_type: UrlType=UrlType.API, **kwargs) -> "AsyncRequest":
+def async_request(method: str,
+                  endpoint: UrlLike,
+                  url_type: UrlType=UrlType.API,
+                  session: Optional[Session]=None,
+                  **kwargs) -> "AsyncRequest":
     """
     A customized wrapper for grequests' :meth:`request()` with its own session. Note that this does not
     return a response, but rather an unsent asynchronous request.
@@ -67,76 +88,115 @@ def async_request(method: str, endpoint: UrlLike, url_type: UrlType=UrlType.API,
     :param method: The HTTP method to use.
     :param endpoint: The endpoint to map to.
     :param url_type: The root URL to use.
+    :param session: The session to use. If not provided, it will use a generic one.
 
     :type method: :class:`str`
     :type endpoint: :type:`.UrlLike`
     :type url_type: Optional[:class:`.UrlType`]
+    :type session: Optional[`Session <https://requests.readthedocs.io/en/latest/api/#requests.Session>`_]
 
     :return: An unsent asynchronous request.
     :rtype: :class:`grequests.AsyncRequest`
     """
 
-    retry_session = Session()
-    retry_session.mount(ADAPTER_PREFIX, HTTPAdapter(max_retries=Retry(total=MAX_RETRIES,
-                                                                      backoff_factor=BACKOFF_FACTOR,
-                                                                      status_forcelist=FORCELIST)))
-    return async_req(method=method, url=f"{url_type}{endpoint}", session=retry_session, **kwargs)
+    close_after = False
+
+    if session is None:
+        close_after = True
+        session = Session()
+        session.mount(ADAPTER_PREFIX, HTTPAdapter(max_retries=Retry(total=MAX_RETRIES,
+                                                                    backoff_factor=BACKOFF_FACTOR,
+                                                                    status_forcelist=FORCELIST)))
+
+    req = async_req(method=method, url=f"{url_type}{endpoint}", session=session, **kwargs)
+
+    if close_after:
+        # Yep, we clean up after ourselves in this house
+        session.close()
+
+    return req
 
 
-def get(endpoint: UrlLike, params=None, url_type: UrlType=UrlType.API, **kwargs) -> "Response":
+def get(endpoint: UrlLike,
+        params=None,
+        url_type: UrlType=UrlType.API,
+        session: Optional[Session]=None,
+        **kwargs) -> "Response":
     """
     A wrap for `requests.get() <https://requests.readthedocs.io/projects/requests-html/en/latest/index.html#requests_html.HTMLSession.get>`_.
 
     :param endpoint: The endpoint to map to.
     :param params: A ``dict`` with the parameters of the request. Usually of type ``dict[str, int | str | None]``
     :param url_type: The root URL to use.
+    :param session: The session to use. If not provided, it will use a generic one.
 
     :type endpoint: :type:`.UrlLike`
     :type params: Optional[:class:`dict`]
     :type url_type: Optional[:class:`.UrlType`]
+    :type session: Optional[`Session <https://requests.readthedocs.io/en/latest/api/#requests.Session>`_]
 
     :return: The HTTP response.
     :rtype: `Response <https://requests.readthedocs.io/en/latest/api/#requests.Response>`_
     """
 
-    return request(HTTPRequestType.GET, endpoint, params=params, url_type=url_type, **kwargs)
+    return request(HTTPRequestType.GET,
+                   endpoint,
+                   params=params,
+                   url_type=url_type,
+                   session=session,
+                   **kwargs)
 
 
-def options(endpoint: UrlLike, url_type: UrlType=UrlType.API, **kwargs) -> "Response":
+def options(endpoint: UrlLike,
+            url_type: UrlType=UrlType.API,
+            session: Optional[Session]=None,
+            **kwargs) -> "Response":
     """
     A wrap for `requests.options() <https://requests.readthedocs.io/projects/requests-html/en/latest/index.html#requests_html.HTMLSession.options>`_.
     
     :param endpoint: The endpoint to map to.
     :param url_type: The root URL to use.
+    :param session: The session to use. If not provided, it will use a generic one.
 
     :type endpoint: :type:`.UrlLike`
     :type url_type: Optional[:class:`.UrlType`]
+    :type session: Optional[`Session <https://requests.readthedocs.io/en/latest/api/#requests.Session>`_]
 
     :return: The HTTP response.
     :rtype: `Response <https://requests.readthedocs.io/en/latest/api/#requests.Response>`_
     """
 
-    return request(HTTPRequestType.OPTIONS, endpoint, url_type=url_type, **kwargs)
+    return request(HTTPRequestType.OPTIONS, endpoint, url_type=url_type, session=session, **kwargs)
 
 
-def head(endpoint: UrlLike, url_type: UrlType=UrlType.API, **kwargs) -> "Response":
+def head(endpoint: UrlLike,
+         url_type: UrlType=UrlType.API,
+         session: Optional[Session]=None,
+         **kwargs) -> "Response":
     """
     A wrap for `requests.head() <https://requests.readthedocs.io/projects/requests-html/en/latest/index.html#requests_html.HTMLSession.head>`_.
     
     :param endpoint: The endpoint to map to.
     :param url_type: The root URL to use.
+    :param session: The session to use. If not provided, it will use a generic one.
 
     :type endpoint: :type:`.UrlLike`
     :type url_type: Optional[:class:`.UrlType`]
+    :type session: Optional[`Session <https://requests.readthedocs.io/en/latest/api/#requests.Session>`_]
 
     :return: The HTTP response.
     :rtype: `Response <https://requests.readthedocs.io/en/latest/api/#requests.Response>`_
     """
 
-    return request(HTTPRequestType.HEAD, endpoint, url_type=url_type, **kwargs)
+    return request(HTTPRequestType.HEAD, endpoint, url_type=url_type, session=session, **kwargs)
 
 
-def post(endpoint: UrlLike, data=None, json=None, url_type: UrlType=UrlType.API, **kwargs) -> "Response":
+def post(endpoint: UrlLike,
+         data=None,
+         json=None,
+         url_type: UrlType=UrlType.API,
+         session: Optional[Session]=None,
+         **kwargs) -> "Response":
     """
     A wrap for `requests.post() <https://requests.readthedocs.io/projects/requests-html/en/latest/index.html#requests_html.HTMLSession.post>`_.
     
@@ -144,85 +204,126 @@ def post(endpoint: UrlLike, data=None, json=None, url_type: UrlType=UrlType.API,
     :param data: Dictionary, list of file-like object to send in the body of the request.
     :param json: JSON-like to send in the body of the request.
     :param url_type: The root URL to use.
+    :param session: The session to use. If not provided, it will use a generic one.
 
     :type endpoint: :type:`.UrlLike`
     :type data: Optional[:class:`Any`]
     :type json: Optional[:class:`dict`]
     :type url_type: Optional[:class:`.UrlType`]
+    :type session: Optional[`Session <https://requests.readthedocs.io/en/latest/api/#requests.Session>`_]
 
     :return: The HTTP response.
     :rtype: `Response <https://requests.readthedocs.io/en/latest/api/#requests.Response>`_
     """
 
-    return request(HTTPRequestType.POST, endpoint, data=data, json=json, url_type=url_type, **kwargs)
+    return request(HTTPRequestType.POST,
+                   endpoint,
+                   data=data,
+                   json=json,
+                   url_type=url_type,
+                   session=session,
+                   **kwargs)
 
 
-def put(endpoint: UrlLike, data=None, url_type: UrlType=UrlType.API, **kwargs) -> "Response":
+def put(endpoint: UrlLike,
+        data=None,
+        url_type: UrlType=UrlType.API,
+        session: Optional[Session]=None,
+        **kwargs) -> "Response":
     """
     A wrap for `requests.put() <https://requests.readthedocs.io/projects/requests-html/en/latest/index.html#requests_html.HTMLSession.put>`_.
     
     :param endpoint: The endpoint to map to.
     :param data: Dictionary, list of file-like object to send in the body of the request.
     :param url_type: The root URL to use.
+    :param session: The session to use. If not provided, it will use a generic one.
 
     :type endpoint: :type:`.UrlLike`
     :type data: Optional[:class:`Any`]
     :type url_type: Optional[:class:`.UrlType`]
+    :type session: Optional[`Session <https://requests.readthedocs.io/en/latest/api/#requests.Session>`_]
 
     :return: The HTTP response.
     :rtype: `Response <https://requests.readthedocs.io/en/latest/api/#requests.Response>`_
     """
 
-    return request(HTTPRequestType.PUT, endpoint, data=data, url_type=url_type, **kwargs)
+    return request(HTTPRequestType.PUT,
+                   endpoint,
+                   data=data,
+                   url_type=url_type,
+                   session=session,
+                   **kwargs)
 
 
-def patch(endpoint: UrlLike, data=None, url_type: UrlType=UrlType.API, **kwargs) -> "Response":
+def patch(endpoint: UrlLike,
+          data=None,
+          url_type: UrlType=UrlType.API,
+          session: Optional[Session]=None,
+          **kwargs) -> "Response":
     """
     A wrap for `requests.patch() <https://requests.readthedocs.io/projects/requests-html/en/latest/index.html#requests_html.HTMLSession.patch>`_.
     
     :param endpoint: The endpoint to map to.
     :param data: Dictionary, list of file-like object to send in the body of the request.
     :param url_type: The root URL to use.
+    :param session: The session to use. If not provided, it will use a generic one.
 
     :type endpoint: :type:`.UrlLike`
     :type data: Optional[:class:`Any`]
     :type url_type: Optional[:class:`.UrlType`]
+    :type session: Optional[`Session <https://requests.readthedocs.io/en/latest/api/#requests.Session>`_]
 
     :return: The HTTP response.
     :rtype: `Response <https://requests.readthedocs.io/en/latest/api/#requests.Response>`_
     """
 
-    return request(HTTPRequestType.PATCH, endpoint, data=data, url_type=url_type, **kwargs)
+    return request(HTTPRequestType.PATCH,
+                   endpoint,
+                   data=data,
+                   url_type=url_type,
+                   session=session,
+                   **kwargs)
 
 
-def delete(endpoint: UrlLike, url_type: UrlType=UrlType.API, **kwargs) -> "Response":
+def delete(endpoint: UrlLike,
+           url_type: UrlType=UrlType.API,
+           session: Optional[Session]=None,
+           **kwargs) -> "Response":
     """
     A wrap for `requests.delete() <https://requests.readthedocs.io/projects/requests-html/en/latest/index.html#requests_html.HTMLSession.delete>`_.
     
     :param endpoint: The endpoint to map to.
     :param url_type: The root URL to use.
+    :param session: The session to use. If not provided, it will use a generic one.
 
     :type endpoint: :type:`.UrlLike`
     :type url_type: Optional[:class:`.UrlType`]
+    :type session: Optional[`Session <https://requests.readthedocs.io/en/latest/api/#requests.Session>`_]
 
     :return: The HTTP response.
     :rtype: `Response <https://requests.readthedocs.io/en/latest/api/#requests.Response>`_
     """
 
-    return request(HTTPRequestType.DELETE, endpoint, url_type=url_type, **kwargs)
+    return request(HTTPRequestType.DELETE, endpoint, url_type=url_type, session=session, **kwargs)
 
 
-def async_get(endpoint: UrlLike, params=None, url_type: UrlType=UrlType.API, **kwargs) -> "AsyncRequest":
+def async_get(endpoint: UrlLike,
+              params=None,
+              url_type: UrlType=UrlType.API,
+              session: Optional[Session]=None,
+              **kwargs) -> "AsyncRequest":
     """
     A wrapper for grequests' :meth:`get()`.
 
     :param endpoint: The endpoint to map to.
     :param params: A ``dict`` with the parameters of the request. Usually of type ``dict[str, int | str | None]``
     :param url_type: The root URL to use.
+    :param session: The session to use. If not provided, it will use a generic one.
 
     :type endpoint: :type:`.UrlLike`
     :type params: Optional[:class:`dict`]
     :type url_type: Optional[:class:`.UrlType`]
+    :type session: Optional[`Session <https://requests.readthedocs.io/en/latest/api/#requests.Session>`_]
 
     :return: An unsent asynchronous request.
     :rtype: :class:`grequests.AsyncRequest`
@@ -230,11 +331,17 @@ def async_get(endpoint: UrlLike, params=None, url_type: UrlType=UrlType.API, **k
     .. note:: Note that this does not return a response, but rather an unsent asynchronous request.
     """
 
-    return async_request(HTTPRequestType.GET, endpoint, params=params, url_type=url_type, **kwargs)
+    return async_request(HTTPRequestType.GET,
+                         endpoint,
+                         params=params,
+                         url_type=url_type,
+                         session=session,
+                         **kwargs)
 
 
 def map(endpoints: list[UrlLike],
         url_type: UrlType=UrlType.API,
+        session: Optional[Session]=None,
         size: Optional[int]=None,
         **kwargs) -> list["Response"]:
     """
@@ -244,17 +351,19 @@ def map(endpoints: list[UrlLike],
 
     :param endpoints: A list of all the endpoints to process.
     :param url_type: The root URL to use.
+    :param session: The session to use. If not provided, it will use a generic one.
     :param size: How big is each batch of asynchronous requests.
 
     :type endpoints: list[:type:`.UrlLike`]
     :type url_type: Optional[:class:`.UrlType`]
+    :type session: Optional[`Session <https://requests.readthedocs.io/en/latest/api/#requests.Session>`_]
     :type size: Optional[:class:`int`]
 
     :return: The list of completed responses.
     :rtype: list[`Response <https://requests.readthedocs.io/en/latest/api/#requests.Response>`_]
     """
 
-    req_endpoints = (async_get(endpoint, url_type=url_type, **kwargs)
+    req_endpoints = (async_get(endpoint, url_type=url_type, session=session, **kwargs)
                      for endpoint in endpoints)
     
     return async_map(req_endpoints, size=size, **kwargs)

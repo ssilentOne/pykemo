@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Optional, TypeAlias, Union
 
 from tqdm import tqdm
 
-from .._aux import DEFAULT_DATE_FMT, sanitize_data_url
+from .._aux import DEFAULT_DATE_FMT, sanitize_data_url, sanitize_str
 from ..comments import Comment
 from ..core import UrlType, get
 from ..files import BAR_WIDTH, File, FilesList
@@ -124,7 +124,7 @@ class Post:
             id=fields.get("id"),
             creator_id=fields.get("user"),
             service=fields.get("service"),
-            title=fields.get("title"),
+            title=fields.get("title").strip(),
             content=fields.get("content", ""),
             substring=fields.get("substring", ""),
             embed=fields.get("embed", {}),
@@ -225,6 +225,19 @@ class Post:
         return self.published >= date
 
 
+    def sanitized_title(self) -> "PathLike":
+        """
+        Converts the title of the post into one apt for a system filename.
+
+        :return: A new path, already sanitized.
+        :rtype: :class:`PathLike`
+        """
+
+        san = sanitize_str(self.title, "\\/:*?\"<>|", "")
+        # It can't end on '.'
+        return san.rstrip(".")
+
+
     def save(self,
              path: Union["PathLike", Path, None]=None,
              force: bool=True,
@@ -248,8 +261,8 @@ class Post:
         files = self._all_files
         if verbose:
             if not files:
-                print(f"Post '{self.title}' doesn't have files to download. Ignoring...")
-                return False
+                print(f"Post '{self.title}' doesn't have attachments to download. Ignoring...")
+                return True
 
             files = tqdm(files,
                          desc=f"Post '{self.title}'",
@@ -259,10 +272,12 @@ class Post:
                          smoothing=1.0,
                          colour="blue")
 
+        san_title = self.sanitized_title()
+
         if path is None:
-            path = Path(self.title)
+            path = Path(san_title)
         elif isinstance(path, str) and path.endswith("/*"):
-            path = Path(f"{path[:-1]}{self.title}")
+            path = Path(path[:-2]) / san_title
         elif not isinstance(path, Path):
             path = Path(path)
 
@@ -278,6 +293,7 @@ class Post:
     def fetch_comments(self) -> CommentsList:
         """
         Fetches the comments of the post.
+    
         .. warning:: This is designed for internal purposes, as it is recommended to use the :attr:`.comments` property instead. However, it can also be used as-is to prevent using a potentially outdated field.
 
         :return: A list of the comments of this post.

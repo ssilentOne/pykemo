@@ -5,9 +5,9 @@ Services checks module.
 from typing import TYPE_CHECKING
 
 from ..exceptions import (
-    IncorrectServiceError,
-    NotDiscordError,
-    NotFanboxError,
+    IncorrectService,
+    NotDiscord,
+    NotFanbox,
     PyKemoException,
 )
 from ..services import ServiceType
@@ -42,7 +42,7 @@ def correct_service_check(creator: "Creator", service: ServiceType) -> None:
     :type service: :class:`.ServiceType`
     """
 
-    exc_check(creator.service != service, IncorrectServiceError(creator.service))
+    exc_check(creator.service != service, IncorrectService(creator.service))
 
 
 def incorrect_service_check(creator: "Creator", service: ServiceType) -> None:
@@ -56,7 +56,7 @@ def incorrect_service_check(creator: "Creator", service: ServiceType) -> None:
     :type service: :class:`.ServiceType`
     """
 
-    exc_check(creator.service == service, IncorrectServiceError(service))
+    exc_check(creator.service == service, IncorrectService(service))
 
 
 def check_if_fanbox(creator: "Creator") -> None:
@@ -68,7 +68,7 @@ def check_if_fanbox(creator: "Creator") -> None:
     :type creator: :class:`.Creator`
     """
 
-    exc_check(creator.service != ServiceType.FANBOX, NotFanboxError(creator.service))
+    exc_check(creator.service != ServiceType.FANBOX, NotFanbox(creator.service))
 
 
 def check_if_discord(creator: "Creator") -> None:
@@ -80,4 +80,4 @@ def check_if_discord(creator: "Creator") -> None:
     :type creator: :class:`.Creator`
     """
 
-    exc_check(creator.service != ServiceType.DISCORD, NotDiscordError(creator.service))
+    exc_check(creator.service != ServiceType.DISCORD, NotDiscord(creator.service))

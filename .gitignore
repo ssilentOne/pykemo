@@ -172,6 +172,9 @@ pyrightconfig.json
 
 # End of https://www.toptal.com/developers/gitignore/api/python
 
+# Visual Studio Code
+.vscode/
+
 ## Custom bits ##
 
 # This is really an internal file to keep track of what to do if I come back after a long time.

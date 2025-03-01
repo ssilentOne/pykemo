@@ -1,0 +1,32 @@
+{{! NLGS' template for Sphinx docs}}
+
+{{summaryPlaceholder}}
+{{#parametersExist}}
+
+{{#args}}
+:param {{var}}: {{descriptionPlaceholder}}, defaults to `{{&default}}`
+{{/args}}
+{{#kwargs}}
+:param {{var}}: {{descriptionPlaceholder}}, defaults to `{{&default}}`
+{{/kwargs}}
+
+{{#args}}
+:type {{var}}: :class:`{{typePlaceholder}}`, optional
+{{/args}}
+{{#kwargs}}
+:type {{var}}: :class:`{{typePlaceholder}}`, optional
+{{/kwargs}}
+{{/parametersExist}}
+{{#exceptionsExist}}
+
+{{#exceptions}}
+:raise {{type}}: {{descriptionPlaceholder}}
+{{/exceptions}}
+{{/exceptionsExist}}
+{{#returnsExist}}
+
+{{#returns}}
+:return: {{descriptionPlaceholder}}
+:rtype: {{typePlaceholder}}
+{{/returns}}
+{{/returnsExist}}

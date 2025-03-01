@@ -12,13 +12,13 @@ General
 Services
 --------
 
-.. autoexception:: pykemo.exceptions.services.IncorrectServiceError
+.. autoexception:: pykemo.exceptions.services.IncorrectService
     :members:
 
 
-.. autoexception:: pykemo.exceptions.services.NotFanboxError
+.. autoexception:: pykemo.exceptions.services.NotFanbox
     :members:
 
 
-.. autoexception:: pykemo.exceptions.services.NotDiscordError
+.. autoexception:: pykemo.exceptions.services.NotDiscord
     :members:

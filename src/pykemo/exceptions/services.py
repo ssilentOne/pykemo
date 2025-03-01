@@ -1,5 +1,5 @@
 """
-Custom exceptions module.
+Custom services exceptions module.
 """
 
 from typing import TYPE_CHECKING

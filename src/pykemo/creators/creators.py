@@ -109,7 +109,7 @@ class Creator:
         :param service: The service of the creator.
         :param creator_id: The ID of the creator.
 
-        :type service: :type:`ServiceLike`
+        :type service: :type:`.ServiceLike`
         :type creator_id: :class:`str`
 
         :return: If the creator is found, retrieve and create a :class:`Creator` instance, otherwise return ``None``.

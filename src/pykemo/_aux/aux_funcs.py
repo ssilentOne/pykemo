@@ -179,7 +179,7 @@ def query_params(query: Optional[str]=None,
     :type stepping: :class:`int`
 
     :return: A dictionary already poblated with the parameters.
-    :rtype: :type:`ParamsFmtDict`
+    :rtype: :type:`.ParamsFmtDict`
     """
 
     params = {}
@@ -213,7 +213,7 @@ def get_posts_responses(*,
     :param page_stepping: The stepping of the paging.
     :param session: The session to make the requests with.
 
-    :type endpoint: :type:`UrlLike`
+    :type endpoint: :type:`.UrlLike`
     :type query: Optional[:class:`str`]
     :type max_posts: Optional[:class:`int`]
     :type page_stepping: :class:`int`
@@ -278,7 +278,7 @@ def async_get_posts_responses(*,
     :param batch_send_size: The size by which to send asynchrnous requests at the same time per batch.
     :param session: The session to make the requests with.
 
-    :type endpoint: :type:`UrlLike`
+    :type endpoint: :type:`.UrlLike`
     :type query: Optional[:class:`str`]
     :type max_posts: Optional[:class:`int`]
     :type page_stepping: :class:`int`

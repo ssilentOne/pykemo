@@ -243,7 +243,8 @@ class Post:
              force: bool=True,
              verbose: bool=True) -> bool:
         """
-        Tries to save all the files in the post.
+        Tries to save all the files in the post. Even if one file fails, it still tries to download
+        the rest.
 
         :param path: The optional path where to store all the files. If it ends with '/*', it
                      will use its default name inside such folder.
@@ -283,11 +284,14 @@ class Post:
 
         path.mkdir(parents=True, exist_ok=True)
 
+        # if even one download fails, consider the operation a failure, but still try to download
+        # the rest of the files
+        success = True
         for file in files:
             if not file.save(path, force=force, verbose=verbose):
-                return False
+                success = False
 
-        return True
+        return success
 
 
     def fetch_comments(self) -> CommentsList:

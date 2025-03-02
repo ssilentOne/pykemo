@@ -339,7 +339,7 @@ def async_get(endpoint: UrlLike,
                          **kwargs)
 
 
-def map(endpoints: list[UrlLike],
+def get_map(endpoints: list[UrlLike],
         url_type: UrlType=UrlType.API,
         session: Optional[Session]=None,
         size: Optional[int]=None,

@@ -7,9 +7,11 @@ from tqdm import tqdm
 from pathlib import Path
 
 from ..core import UrlType, get
+from ..core.coroutines import co_get
 
 if TYPE_CHECKING:
     from os import PathLike
+    from requests import Response
 
     from ..core import UrlLike
 
@@ -153,6 +155,72 @@ class File:
         return self.content_type is not None and self.content_type.startswith("text")
 
 
+    def _process_path(self, raw_path: Union["PathLike", Path]) -> Path:
+        """
+        Processes a potential literal into a :class:`Path` instance ready for custom use.
+        
+        :param raw_path: Coulñd be a path-like string literal, or already a :class:`Path` instance.
+        
+        :type raw_path: Union[:type:`PathLike`, :class:`Path`]
+        
+        :return: The completely processed path.
+        :rtype: :class:`Path`
+        """
+
+        if not raw_path:
+            raw_path = Path(self.name)
+        elif not isinstance(raw_path, Path):
+            raw_path = Path(raw_path)
+
+        if not raw_path.suffix or raw_path.is_dir():
+            raw_path /= self.name
+
+        return raw_path
+
+
+    def _download(self,
+                  response: "Response",
+                  path: Path,
+                  verbose: bool,
+                  chunk_size: int) -> None:
+        """
+        Actually downloads the content of a response.
+        
+        :param response: The response itself where the data is downloaded from.
+        :param path: The path to save data to.
+        :param verbose: Wether to track progress.
+        :param chunk_size: The size `(in bytes)` of the chunks to download at a
+                           time (usually a power of 2).
+        
+        :type response: :class:`Response`
+        :type path: :class:`Path`
+        :type verbose: :class:`bool`
+        :type chunk_size: :class:`int`
+        """
+
+        if self.content_type is None:
+            self._content_type = response.headers.get("content-type", None)
+
+        w_mode = f"w{'b' if not self._is_text_mode() else ''}"
+
+        context = path.open(mode=w_mode)
+        if verbose:
+            context = tqdm.wrapattr(context,
+                                    "write",
+                                    miniters=1,
+                                    desc=f"->\t{self.name}",
+                                    total=int(response.headers.get("content-length", 0)),
+                                    ncols=BAR_WIDTH,
+                                    leave=False,
+                                    position=1,
+                                    smoothing=1.0,
+                                    colour="green")
+
+        with context as fout:
+            for chunk in response.iter_content(chunk_size=chunk_size):
+                fout.write(chunk)
+
+
     def save(self,
              path: Union["PathLike", Path]="",
              force: bool=True,
@@ -176,13 +244,7 @@ class File:
         :rtype: :class:`bool`
         """
 
-        if not path:
-            path = Path(self.name)
-        elif not isinstance(path, Path):
-            path = Path(path)
-
-        if not path.suffix or path.is_dir():
-            path /= self.name
+        path = self._process_path(path)
 
         if not path.exists():
             path.parent.mkdir(parents=True, exist_ok=True)
@@ -191,26 +253,43 @@ class File:
         
         response = get(self._rel_path, url_type=self._url_root, stream=True)
 
-        if self.content_type is None:
-            self._content_type = response.headers.get("content-type", None)
+        self._download(response, path, verbose, chunk_size)
 
-        w_mode = f"w{'b' if not self._is_text_mode() else ''}"
+        return True
 
-        context = path.open(mode=w_mode)
-        if verbose:
-            context = tqdm.wrapattr(context,
-                                    "write",
-                                    miniters=1,
-                                    desc=f"->\t{self.name}",
-                                    total=int(response.headers.get("content-length", 0)),
-                                    ncols=BAR_WIDTH,
-                                    leave=False,
-                                    position=1,
-                                    smoothing=1.0,
-                                    colour="green")
 
-        with context as fout:
-            for chunk in response.iter_content(chunk_size=chunk_size):
-                fout.write(chunk)
+    async def co_save(self,
+                         path: Union["PathLike", Path]="",
+                         force: bool=True,
+                         verbose: bool=False,
+                         chunk_size: int=4096) -> bool:
+        """
+        Tries to save the file to a given path as a coroutine.
+
+        :param path: The path in which to save the file.
+        :param force: If another file is found, overwrite it.
+        :param verbose: Wether to track progress.
+        :param chunk_size: The size `(in bytes)` of the chunks to download at a
+                           time (usually a power of 2).
+
+        :type path: :class:`PathLike` | :class:`Path`
+        :type force: :class:`bool`
+        :type verbose: :class:`bool`
+        :type chunk_size: :class:`int`
+
+        :return: Wether or not the download was successful.
+        :rtype: :class:`bool`
+        """
+
+        path = self._process_path(path)
+
+        if not path.exists():
+            path.parent.mkdir(parents=True, exist_ok=True)
+        elif path.exists() and not force:
+            return False
+
+        async_res = await co_get(self._rel_path, url_type=self._url_root, stream=True)
+
+        self._download(async_res, path, verbose, chunk_size)
 
         return True

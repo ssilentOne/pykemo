@@ -2,12 +2,13 @@
 Posts module.
 """
 
+from asyncio import run as asyncio_run
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional, TypeAlias, Union
 
-from tqdm import tqdm
+from tqdm.asyncio import tqdm_asyncio
 
 from .._aux import DEFAULT_DATE_FMT, MILI_DATE_FMT, sanitize_data_url, sanitize_str
 from ..comments import Comment
@@ -251,7 +252,7 @@ class Post:
         :param force: Wether to overwrite existing files
         :param verbose: Wether to track progress.
 
-        :type path: Union[:class:`PathLike`, :class:`Path`, None]
+        :type path: :class:`PathLike` | :class:`Path` | ``None``
         :type force: :class:`bool`
         :type verbose: :class:`bool`
 
@@ -265,14 +266,6 @@ class Post:
                 print(f"Post '{self.title}' doesn't have attachments to download. Ignoring...")
                 return True
 
-            files = tqdm(files,
-                         desc=f"Post '{self.title}'",
-                         ncols=BAR_WIDTH,
-                         unit="file",
-                         position=0,
-                         smoothing=1.0,
-                         colour="blue")
-
         san_title = self.sanitized_title()
 
         if path is None:
@@ -284,14 +277,42 @@ class Post:
 
         path.mkdir(parents=True, exist_ok=True)
 
-        # if even one download fails, consider the operation a failure, but still try to download
-        # the rest of the files
-        success = True
-        for file in files:
-            if not file.save(path, force=force, verbose=verbose):
-                success = False
+        return asyncio_run(self._save_task(files, path, force, verbose))
 
-        return success
+
+    async def _save_task(self,
+                         files: FilesList,
+                         path: Union["PathLike", Path, None]=None,
+                         force: bool=True,
+                         verbose: bool=True) -> bool:
+        """
+        Wrapper for saving files as a coroutine.
+
+        :param files: The list of files to download.
+        :param path: The optional path where to store all the files. If it ends with '/*', it
+                     will use its default name inside such folder.
+        :param force: Wether to overwrite existing files
+        :param verbose: Wether to track progress.
+
+        :type files: list[:class:`.File`]
+        :type path: :class:`PathLike` | :class:`Path` | ``None``
+        :type force: :class:`bool`
+        :type verbose: :class:`bool`
+
+        :return: ``True`` if the download of `all` files was successful, or ``False`` if not.
+        :rtype: :class:`bool`
+        """
+
+        results = await tqdm_asyncio.gather((file.co_save(path, force=force, verbose=verbose)
+                                                for file in files),
+                                            desc=f"Post '{self.title}'",
+                                            ncols=BAR_WIDTH,
+                                            unit="file",
+                                            position=0,
+                                            smoothing=1.0,
+                                            colour="blue")
+
+        return all(results)
 
 
     def fetch_comments(self) -> CommentsList:

@@ -17,12 +17,13 @@ if TYPE_CHECKING:
     from datetime import datetime
 
     from ..services import ServiceLike
+    from ..sessions import KemoSession
 
 MAX_POSTS_LIMIT: int = 1000
 "Arbitrary limit for posts to be queried with auxiliar functions."
 
 
-def get_creators() -> CreatorsList:
+def get_creators(kemo_session: Optional["KemoSession"]=None) -> CreatorsList:
     """
     Gets all the creators.
 
@@ -30,11 +31,16 @@ def get_creators() -> CreatorsList:
                  **ALL the creators on the site**. If you do not explicitly need this, do not use
                  it.
 
+    :param kemo_session: The Kemono Session to use., defaults to ``None``
+
+    :type kemo_session: :class:`.KemoSession`, optional
+
     :returns: The list of all creators.
     :rtype: list[:class:`.Creator`]
     """
 
-    response = get("/creators.txt")
+    endpoint = "/creators.txt"
+    response = (get(endpoint) if kemo_session is None else kemo_session.get(endpoint))
     creators = []
 
     for creator_fields in response.json():
@@ -47,7 +53,8 @@ def get_creators() -> CreatorsList:
 def get_posts(query: Optional[str]=None,
               max_posts: int=ELEMENTS_PER_PAGE,
               before: Optional["datetime"]=None,
-              since: Optional["datetime"]=None) -> PostsList:
+              since: Optional["datetime"]=None,
+              kemo_session: Optional["KemoSession"]=None) -> PostsList:
     """
     Gets all posts that coincide with the given parameters.
 
@@ -56,11 +63,13 @@ def get_posts(query: Optional[str]=None,
                       the number of posts to enter the lists.
     :param before: Include only posts before this date.
     :param since: Include only posts after and including this date.
+    :param kemo_session: The Kemono Session to use., defaults to ``None``
 
     :type query: Optional[:class:`str`]
     :type max_posts: :class:`int`
     :type before: Optional[:class:`datetime.datetime`]
     :type since: Optional[:class:`datetime.datetime`]
+    :type kemo_session: :class:`.KemoSession`, optional
 
     :return: The list of posts of the query.
     :rtype: list[:class:`.Post`]
@@ -72,7 +81,8 @@ def get_posts(query: Optional[str]=None,
 
     response_bodies = get_posts_responses(endpoint="/posts",
                                           query=query,
-                                          max_posts=max_posts)
+                                          max_posts=max_posts,
+                                          kemo_session=kemo_session)
     posts = []
 
     for post_fields in response_bodies:
@@ -83,7 +93,7 @@ def get_posts(query: Optional[str]=None,
 
         post_fields.update(creator=get_creator(post_fields.get("service"),
                                                post_fields.get("user")))
-        posts.append(Post.from_dict(**post_fields))
+        posts.append(Post.from_dict(**post_fields).set_underlying_session(kemo_session))
 
     return posts
 
@@ -123,19 +133,22 @@ def get_creator_links(service: "ServiceLike", creator_id: str) -> CreatorsList:
     return get_creator(service, creator_id).other_links()
 
 
-def get_file_hash(hash: str) -> FileHashResult:
+def get_file_hash(hash: str, kemo_session: Optional["KemoSession"]=None) -> FileHashResult:
     """
     Search a file by hash. Also tries to retrieve posts where such file is present.
 
     :param hash: The query hash to search with.
+    :param session: The Kemono Session to use., defaults to ``None``
 
     :type hash: :class:`str`
+    :type session: :class:`.KemoSession`, optional
 
     :return: The result of the query.
     :rtype: :class:`.FileHashResult`
     """
 
-    response = get(f"/search_hash/{hash}")
+    get_f = (get if kemo_session is None else kemo_session.get)
+    response = get_f(f"/search_hash/{hash}")
 
     if response.status_code == 404:
         return FileHashResult.empty()
@@ -154,7 +167,7 @@ def get_file_hash(hash: str) -> FileHashResult:
     for post_fields in posts:
         post_fields.update(creator=get_creator(post_fields.get("service"),
                                                post_fields.get("user")))
-        posts_list.append(Post.from_dict(**post_fields))
+        posts_list.append(Post.from_dict(**post_fields).set_underlying_session(kemo_session))
 
     msgs_list = []
     msgs_res = body.get("discord_posts", None)
@@ -164,19 +177,26 @@ def get_file_hash(hash: str) -> FileHashResult:
                               creator_id=msg_fields.get("server"))
         msg_fields.update(parent_channel=creator.get_channel(msg_fields.get("channel")),
                           content=msg_fields.get("substring", ""))
-        msgs_list.append(DiscordMessage.from_dict(**msg_fields))
+        msgs_list.append(DiscordMessage.from_dict(**msg_fields).set_underlying_session(kemo_session))
 
 
     return FileHashResult(file=file, posts=posts_list, disc=msgs_list)
 
 
-def get_app_version() -> str:
+def get_api_version(kemo_session: Optional["KemoSession"]=None) -> str:
     """
+    Convenience function to get the last hash of the current API version.
+
+    :param session: The Kemono Session to use., defaults to ``None``
+
+    :type session: :class:`.KemoSession`, optional
+
     :return: The last commit hash of the API.
     :rtype: :class:`str`
     """
 
-    return get("/app_version").text
+    get_func = (get if kemo_session is None else kemo_session.get)
+    return get_func("/app_version").text
 
 
 def login(

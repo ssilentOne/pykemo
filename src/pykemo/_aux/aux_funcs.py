@@ -10,11 +10,13 @@ from grequests import map as async_map
 from ..core import async_get, get
 
 if TYPE_CHECKING:
-    from requests import Response, Session
     from typing import Iterable
+
+    from requests import Response, Session
 
     from ..core import UrlLike
     from ..files import FileDict
+    from ..sessions import KemoSession
 
 DateOrFmt: TypeAlias = Union[str, datetime]
 ParamsFmtDict: TypeAlias = dict[str, Union[str, int]]
@@ -203,7 +205,7 @@ def get_posts_responses(*,
                         query: Optional[str]=None,
                         max_posts: Optional[int]=None,
                         page_stepping: int,
-                        session: Optional["Session"]=None) -> list["Response"]:
+                        kemo_session: Optional["KemoSession"]=None) -> list["Response"]:
     """
     Gets the responses of posts by page.
 
@@ -211,29 +213,29 @@ def get_posts_responses(*,
     :param query: A search query string to filter the results.
     :param max_posts: The max posts to fit into the final list.
     :param page_stepping: The stepping of the paging.
-    :param session: The session to make the requests with.
+    :param kemo_session: The session to make the requests with.
 
     :type endpoint: :type:`.UrlLike`
     :type query: Optional[:class:`str`]
     :type max_posts: Optional[:class:`int`]
     :type page_stepping: :class:`int`
-    :type session: Optional[:class:`Session <https://requests.readthedocs.io/en/latest/api/#requests.Session>`_]
+    :type kemosession: Optional[:class:`.KemoSession`_]
 
     :return: A list of :class:`requests.Response`, to be further processed.
     :rtype: list[`Response <https://requests.readthedocs.io/en/latest/api/#requests.Response>`_]
     """
 
     responses = []
+    get_func = (get if kemo_session is None else kemo_session.get)
 
     if max_posts is None: # Try to get ALL the posts
         cur_page = 0
         while True:
-            page_response = get(
+            page_response = get_func(
                 endpoint,
                 params=query_params(query,
                                     cur_page * page_stepping,
-                                    page_stepping),
-                session=session
+                                    page_stepping)
             )
             if page_response is not None and page_response.status_code != 429:
                 responses.extend(page_response.json())
@@ -246,12 +248,11 @@ def get_posts_responses(*,
     else:
         n_pages = (max_posts // page_stepping) + 1 # one more for the surplus
         for page in range(n_pages):
-            page_response = get(
+            page_response = get_func(
                 endpoint,
                 params=query_params(query,
                                     page * page_stepping,
-                                    page_stepping),
-                session=session
+                                    page_stepping)
             )
 
             # by this point, one would expect this to be a list of posts
@@ -267,7 +268,7 @@ def async_get_posts_responses(*,
                               max_posts: Optional[int]=None,
                               page_stepping: int,
                               batch_send_size: Optional[int]=None,
-                              session: Optional["Session"]=None) -> list["Response"]:
+                              kemo_session: Optional["KemoSession"]=None) -> list["Response"]:
     """
     Gets the asynchronous responses of posts by page.
 
@@ -276,14 +277,14 @@ def async_get_posts_responses(*,
     :param max_posts: The max posts to fit into the final list.
     :param page_stepping: The stepping of the paging.
     :param batch_send_size: The size by which to send asynchrnous requests at the same time per batch.
-    :param session: The session to make the requests with.
+    :param kemo_session: The session to make the requests with.
 
     :type endpoint: :type:`.UrlLike`
     :type query: Optional[:class:`str`]
     :type max_posts: Optional[:class:`int`]
     :type page_stepping: :class:`int`
     :type batch_send_size: Optional[:class:`int`]
-    :type session: Optional[:class:`Session <https://requests.readthedocs.io/en/latest/api/#requests.Session>`_]
+    :type kemo_session: Optional[:class:`.KemoSession`]
 
     :return: A list of :class:`requests.Response`, to be further processed.
     :rtype: list[`Response <https://requests.readthedocs.io/en/latest/api/#requests.Response>`_]
@@ -292,18 +293,18 @@ def async_get_posts_responses(*,
     responses = []
     exit_flag = False
     send_size = (DEFAULT_BATCH_SEND_SIZE if batch_send_size is not None else batch_send_size)
+    aget = (async_get if kemo_session is None else kemo_session.aget)
 
     if max_posts is None: # Try to get ALL the posts
         cur_page = 0
         while not exit_flag:
             req_batch = []
             for _ in range(ASYNC_FETCH_BATCH):
-                page_async_req = async_get(
+                page_async_req = aget(
                     endpoint,
                     params=query_params(query,
                                         cur_page * page_stepping,
-                                        page_stepping),
-                    session=session
+                                        page_stepping)
                 )
                 req_batch.append(page_async_req)
                 cur_page += 1
@@ -318,12 +319,11 @@ def async_get_posts_responses(*,
 
     else:
         n_pages = (max_posts // page_stepping) + 1 # one more for the surplus
-        req_batch = (async_get(
+        req_batch = (aget(
             endpoint,
             params=query_params(query,
                                 page * page_stepping,
-                                page_stepping),
-            session=session)
+                                page_stepping))
                     for page in range(n_pages))
         res_batch = async_map(req_batch, size=send_size)
 

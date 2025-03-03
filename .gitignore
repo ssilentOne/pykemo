@@ -179,3 +179,6 @@ pyrightconfig.json
 
 # This is really an internal file to keep track of what to do if I come back after a long time.
 todo.md
+
+downloads/
+download_test/

@@ -41,7 +41,7 @@ async def co_get(endpoint: "UrlLike",
     return get(endpoint, params, url_type, session, **kwargs)
 
 
-async def co_post(endpoint: UrlLike,
+async def co_post(endpoint: "UrlLike",
                   data=None,
                   json=None,
                   url_type: UrlType=UrlType.API,
@@ -69,7 +69,7 @@ async def co_post(endpoint: UrlLike,
     return post(endpoint, data, json, url_type, session, **kwargs)
 
 
-async def co_delete(endpoint: UrlLike,
+async def co_delete(endpoint: "UrlLike",
                     url_type: UrlType=UrlType.API,
                     session: Optional[Session]=None,
                     **kwargs) -> "Response":

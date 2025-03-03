@@ -7,11 +7,11 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Optional, TypeAlias
 
 from .._aux import (
+    MILI_DATE_FMT,
     async_get_posts_responses,
     before_date,
     get_posts_responses,
     since_date,
-    MILI_DATE_FMT
 )
 from ..core import UrlType
 from .messages import DiscordMessage, MessagesList
@@ -19,6 +19,7 @@ from .messages import DiscordMessage, MessagesList
 if TYPE_CHECKING:
     from ..core import UrlLike
     from ..creators import Creator
+    from ..sessions import KemoSession
 
 ChannelsList: TypeAlias = list["DiscordChannel"]
 
@@ -43,6 +44,8 @@ class DiscordChannel:
     id: str
     channel_name: str
     owner: "Creator" = field(repr=False)
+
+    __kemo_session: Optional["KemoSession"] = field(default=None, init=False, repr=False)
 
 
     @classmethod
@@ -86,6 +89,22 @@ class DiscordChannel:
         return f"{UrlType.SITE}/discord/server/{self.server_id}#{self.id}"
 
 
+    def set_underlying_session(self, ks: "KemoSession") -> "DiscordChannel":
+        """
+        Quietly sets the session which the channel uses for its requests.
+        
+        :param session: The session instance.
+        
+        :type session: :class:`.KemoSession`
+
+        :return: The same instance of the channel, for convenience.
+        :rtype: :class:`.Creator`
+        """
+
+        self.__kemo_session = ks
+        return self
+
+
     def messages(self,
                  *,
                  max_msg: Optional[int]=None,
@@ -119,7 +138,8 @@ class DiscordChannel:
         posts_req = (async_get_posts_responses if asynchronous else get_posts_responses)
         response_bodies = posts_req(endpoint=f"/discord/channel/{self.id}",
                                     max_posts=max_msg,
-                                    page_stepping=OFFSET_STEPPING)
+                                    page_stepping=OFFSET_STEPPING,
+                                    kemo_session=self.__kemo_session)
         msgs_list = []
 
         for msg_fields in response_bodies:
@@ -131,7 +151,7 @@ class DiscordChannel:
                 continue
 
             msg_fields.update(parent_channel=self)
-            post = DiscordMessage.from_dict(**msg_fields)
+            post = DiscordMessage.from_dict(**msg_fields).set_underlying_session(self.__kemo_session)
 
             msgs_list.append(post)
 

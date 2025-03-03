@@ -13,6 +13,7 @@ from ..core import (
     FORCELIST,
     MAX_RETRIES,
     UrlType,
+    async_get,
     delete,
     get,
     post,
@@ -20,6 +21,7 @@ from ..core import (
 )
 
 if TYPE_CHECKING:
+    from grequests import AsyncRequest
     from requests import Response
 
     from ..core import UrlLike
@@ -185,6 +187,31 @@ class KemoSession:
         """
 
         return delete(endpoint, url_type, session=self.__session, **kwargs)
+
+
+    def aget(self,
+                  endpoint: "UrlLike",
+                  params=None,
+                  url_type: UrlType=UrlType.API,
+                  **kwargs) -> "AsyncRequest":
+        """
+        Overcharges an asynchronous GET request.
+
+        :param endpoint: The endpoint to map to.
+        :param params: A ``dict`` with the parameters of the request. Usually of type ``dict[str, int | str | None]``
+        :param url_type: The root URL to use.
+
+        :type endpoint: :type:`.UrlLike`
+        :type params: Optional[:class:`dict`]
+        :type url_type: Optional[:class:`.UrlType`]
+
+        :return: An unsent asynchronous request.
+        :rtype: :class:`grequests.AsyncRequest`
+
+        .. note:: Note that this does not return a response, but rather an unsent asynchronous request.
+        """
+
+        return async_get(endpoint, params, url_type, self.__session, **kwargs)
 
 
     def set_session_cookie(self, cookie_auth: TokenValue) -> None:

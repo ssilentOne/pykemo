@@ -2,18 +2,21 @@
 Files module.
 """
 
-from typing import TYPE_CHECKING, Optional, Union, TypeAlias, Literal
-from tqdm import tqdm
 from pathlib import Path
+from typing import TYPE_CHECKING, Literal, Optional, TypeAlias, Union
+
+from tqdm import tqdm
 
 from ..core import UrlType, get
 from ..core.coroutines import co_get
 
 if TYPE_CHECKING:
     from os import PathLike
+
     from requests import Response
 
     from ..core import UrlLike
+    from ..sessions import KemoSession
 
 FilesList: TypeAlias = list["File"]
 FileDict: TypeAlias = dict[Literal["name", "path"], Union[str, "PathLike", "UrlLike"]]
@@ -58,6 +61,8 @@ class File:
         self._content_type: Optional[str] = content_type
         self._url_root: "UrlLike" = url_source
         self._server: int = server
+
+        self.__kemo_session: Optional[KemoSession] = None
 
         if self._is_data(self._url_root):
             self._url_root = self._url_root.format(i=self._server)
@@ -142,6 +147,22 @@ class File:
         """
 
         return f"{self._url_root}{self._rel_path}"
+
+
+    def with_session(self, ks: "KemoSession") -> "File":
+        """
+        Quietly sets the session which the post uses for its requests.
+        
+        :param session: The session instance.
+        
+        :type session: :class:`.KemoSession`
+
+        :return: The same instance of the post, for convenience.
+        :rtype: :class:`.Creator`
+        """
+
+        self.__kemo_session = ks
+        return self
 
 
     def _is_text_mode(self) -> bool:

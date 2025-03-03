@@ -21,10 +21,11 @@ from ..posts import ELEMENTS_PER_PAGE, Post, PostsList
 from ..services import ServiceType
 
 if TYPE_CHECKING:
-    from requests import Response, Session
+    from requests import Response
 
     from ..core import UrlLike
     from ..services import ServiceLike
+    from ..sessions import KemoSession
 
 CreatorsList: TypeAlias = list["Creator"]
 _CreatorFields: TypeAlias = Literal["id", "name", "service", "indexed", "updated",
@@ -78,6 +79,8 @@ class Creator:
     _channels: ChannelsList = field(default_factory=list, init=False, repr=False)
     __chan_loaded: bool = field(default=False, init=False, repr=False)
 
+    __kemo_session: Optional["KemoSession"] = field(default=None, init=False, repr=False)
+
 
     @classmethod
     def from_dict(cls, **fields: CreatorDict) -> "Creator":
@@ -101,26 +104,32 @@ class Creator:
 
 
     @classmethod
-    def from_profile(cls, service: "ServiceLike", creator_id: str) -> Optional["Creator"]:
+    def from_profile(cls,
+                     service: "ServiceLike",
+                     creator_id: str,
+                     kemo_session: Optional["KemoSession"]=None) -> Optional["Creator"]:
         """
         Retrieves a creator using its profile info.
 
         :param service: The service of the creator.
         :param creator_id: The ID of the creator.
+        :param session: The Kemono Session to use for its creation., defaults to ``None``
 
         :type service: :type:`.ServiceLike`
         :type creator_id: :class:`str`
+        :type session: :class:`.KemoSession`, optional
 
         :return: If the creator is found, retrieve and create a :class:`Creator` instance, otherwise return ``None``.
         :rtype: Optional[:class:`Creator`]
         """
 
-        creator_response = get(f"/{service}/user/{creator_id}/profile")
+        get_func = (get if kemo_session is None else kemo_session.get)
+        creator_response = get_func(f"/{service}/user/{creator_id}/profile")
 
         if creator_response.status_code == 404:
             return None
 
-        return Creator.from_dict(**creator_response.json())
+        return Creator.from_dict(**creator_response.json()).set_underlying_session(kemo_session)
 
 
     @property
@@ -195,16 +204,34 @@ class Creator:
         :rtype: list[:class:`.Creator`]
         """
 
-        link_response = get(f"/{self.service}/user/{self.id}/links")
+        _get = (get if self.__kemo_session is None else self.__kemo_session.get)
+        link_response = _get(f"/{self.service}/user/{self.id}/links")
         links = []
 
         for link_fields in link_response.json():
             creator = Creator.from_profile(link_fields.get("service"),
-                                           link_fields.get("id"))
+                                           link_fields.get("id"),
+                                           self.__kemo_session)
             if creator is not None:
                 links.append(creator)
 
         return links
+
+
+    def set_underlying_session(self, ks: "KemoSession") -> "Creator":
+        """
+        Quietly sets the session which the creator uses for its requests.
+        
+        :param session: The session instance.
+        
+        :type session: :class:`.KemoSession`
+
+        :return: The same instance of the creator, for convenience.
+        :rtype: :class:`.Creator`
+        """
+
+        self.__kemo_session = ks
+        return self
 
 
     def posts(self,
@@ -213,7 +240,6 @@ class Creator:
               max_posts: Optional[int]=ELEMENTS_PER_PAGE,
               before: Optional[datetime]=None,
               since: Optional[datetime]=None,
-              session: Optional["Session"]=None,
               asynchronous: bool=False) -> PostsList:
         """
         Retrieves posts under this creator. If the creator is from Discord, it won't retrieve any,
@@ -223,14 +249,12 @@ class Creator:
         :param max_posts: The max number of posts to look through. This is NOT necessarily the number of posts to enter the lists. If `None`, it will try to retrieve ALL the posts.
         :param before: Include only posts before this date.
         :param since: Include only posts after and including this date.
-        :param session: The session to be used in the query.
         :param asynchronous: Wether to use asynchronous requests to maybe boost performance. It's really only recommended with queries of no more than 350 posts. Too many queries overwhelms the server and it actually slows the request down.
 
         :type query: Optional[:class:`str`]
         :type max_posts: Optional[:class:`int`]
         :type before: Optional[:class:`datetime.datetime`]
         :type since: Optional[:class:`datetime.datetime`]
-        :type session: Optional[:class:`Session <https://requests.readthedocs.io/en/latest/api/#requests.Session>`_]
         :type asynchronous: :class:`bool`
 
         :raises ValueError: If ``max_posts`` is negative or zero.
@@ -247,7 +271,7 @@ class Creator:
                                     query=query,
                                     max_posts=max_posts,
                                     page_stepping=ELEMENTS_PER_PAGE,
-                                    session=session)
+                                    kemo_session=self.__kemo_session)
         posts_list = []
 
         for post_fields in response_bodies:
@@ -257,7 +281,7 @@ class Creator:
                 continue
 
             post_fields.update(creator=self)
-            post = Post.from_dict(**post_fields)
+            post = Post.from_dict(**post_fields).set_underlying_session(self.__kemo_session)
 
             posts_list.append(post)
 
@@ -276,12 +300,13 @@ class Creator:
         :rtype: Optional[`.Post`]
         """
 
-        response = get(f"/{self.service}/user/{self.id}/post/{post_id}")
+        _get = (get if self.__kemo_session is None else self.__kemo_session.get)
+        response = _get(f"/{self.service}/user/{self.id}/post/{post_id}")
 
         if response.status_code == 404:
             return None
 
-        return Post.from_dict(**response.json())
+        return Post.from_dict(**response.json()).set_underlying_session(self.__kemo_session)
 
 
     def _fetch_announcements(self) -> AnnouncementsList:
@@ -294,7 +319,8 @@ class Creator:
         :rtype: list[:class:`.Announcement`]
         """
 
-        response = get(f"/{self.service}/user/{self.id}/announcements")
+        _get = (get if self.__kemo_session is None else self.__kemo_session.get)
+        response = _get(f"/{self.service}/user/{self.id}/announcements")
         announcements = []
 
         for ann_fields in response.json():
@@ -318,7 +344,8 @@ class Creator:
         fancards = []
 
         if self.service == ServiceType.FANBOX:
-            response = get(f"/{self.service}/user/{self.id}/fancards")
+            _get = (get if self.__kemo_session is None else self.__kemo_session.get)
+            response = _get(f"/{self.service}/user/{self.id}/fancards")
 
             for fancard_fields in response.json():
                 fancard_fields.update(creator=self)
@@ -336,7 +363,8 @@ class Creator:
         :rtype: `Response <https://requests.readthedocs.io/en/latest/api/#requests.Response>`_
         """
 
-        return get(f"/discord/channel/lookup/{self.id}")
+        _get = (get if self.__kemo_session is None else self.__kemo_session.get)
+        return _get(f"/discord/channel/lookup/{self.id}")
 
 
     def fetch_channels(self) -> ChannelsList:
@@ -353,7 +381,7 @@ class Creator:
 
             for chan_fields in self._get_channels_response().json():
                 chan_fields.update(creator=self)
-                channels.append(DiscordChannel.from_dict(**chan_fields))
+                channels.append(DiscordChannel.from_dict(**chan_fields).set_underlying_session(self.__kemo_session))
 
 
         return channels
@@ -374,6 +402,6 @@ class Creator:
         for chan_fields in self._get_channels_response().json():
             if chan_fields.get("id") == channel_id:
                 chan_fields.update(creator=self)
-                return DiscordChannel.from_dict(**chan_fields)
+                return DiscordChannel.from_dict(**chan_fields).set_underlying_session(self.__kemo_session)
 
         return None

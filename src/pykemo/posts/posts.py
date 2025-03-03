@@ -14,6 +14,7 @@ from .._aux import DEFAULT_DATE_FMT, MILI_DATE_FMT, sanitize_data_url, sanitize_
 from ..comments import Comment
 from ..core import UrlType, get
 from ..files import BAR_WIDTH, File, FilesList
+from ..services import ServiceType
 from .post_revisions import PostRevision
 
 if TYPE_CHECKING:
@@ -22,6 +23,7 @@ if TYPE_CHECKING:
     from ..core import UrlLike
     from ..creators import Creator
     from ..services import ServiceLike
+    from ..sessions import KemoSession
 
 PostsList: TypeAlias = list["Post"]
 CommentsList: TypeAlias = list[Comment]
@@ -98,6 +100,8 @@ class Post:
     _revisions: PostRevsList = field(default_factory=list, init=False, repr=False)
     __revs_loaded: bool = field(default=False, init=False, repr=False)
 
+    __kemo_session: Optional["KemoSession"] = field(default=False, init=False, repr=False)
+
 
     @classmethod
     def from_dict(cls, **fields) -> "Post":
@@ -108,36 +112,38 @@ class Post:
         :rtype: :class:`.Post`
         """
 
-        added_field = fields.get("added", None)
+        post_fields = fields["post"]
+
+        added_field = post_fields.get("added", None)
         added = (datetime.strptime(added_field, MILI_DATE_FMT)
                  if added_field is not None
                  else None)
         
-        edited_field = fields.get("edited", None)
+        edited_field = post_fields.get("edited", None)
         edited = (datetime.strptime(edited_field, DEFAULT_DATE_FMT)
                  if edited_field is not None
                  else None)
         
-        file_dict = fields.get("file")
-        attachments = fields.get("attachments")
+        file_dict = post_fields.get("file")
+        attachments = post_fields.get("attachments")
 
         return cls(
-            id=fields.get("id"),
-            creator_id=fields.get("user"),
-            service=fields.get("service"),
-            title=fields.get("title").strip(),
-            content=fields.get("content", ""),
-            substring=fields.get("substring", ""),
-            embed=fields.get("embed", {}),
-            shared_file=fields.get("shared_file", False),
+            id=post_fields.get("id"),
+            creator_id=post_fields.get("user"),
+            service=ServiceType(post_fields.get("service")),
+            title=post_fields.get("title").strip(),
+            content=post_fields.get("content", ""),
+            substring=post_fields.get("substring", ""),
+            embed=post_fields.get("embed", {}),
+            shared_file=post_fields.get("shared_file", False),
             added=added,
-            published=datetime.strptime(fields.get("published"), DEFAULT_DATE_FMT),
+            published=datetime.strptime(post_fields.get("published"), DEFAULT_DATE_FMT),
             edited=edited,
             file=(File.from_dict(**sanitize_data_url(file_dict)) if file_dict else None),
             attachments=[File.from_dict(**sanitize_data_url(attachment_fields))
                          for attachment_fields in attachments],
-            creator=fields.get("creator", None),
-            is_revision=fields.get("is_revision", False)
+            creator=post_fields.get("creator", None),
+            is_revision=post_fields.get("is_revision", False)
         )
 
 
@@ -202,6 +208,24 @@ class Post:
         """
 
         return ([self.file] if self.file is not None else []) + self.attachments
+
+
+    def set_underlying_session(self, ks: "KemoSession") -> "Post":
+        """
+        Quietly sets the session which the post uses for its requests.
+        
+        :param session: The session instance.
+        
+        :type session: :class:`.KemoSession`
+
+        :return: The same instance of the post, for convenience.
+        :rtype: :class:`.Creator`
+        """
+
+        self.__kemo_session = ks
+        for file in self._all_files:
+            file.with_session(self.__kemo_session)
+        return self
 
 
     def before(self, date: datetime) -> bool:
@@ -303,7 +327,7 @@ class Post:
         :rtype: :class:`bool`
         """
 
-        results = await tqdm_asyncio.gather((file.co_save(path, force=force, verbose=verbose)
+        results = await tqdm_asyncio.gather(*(file.co_save(path, force=force, verbose=verbose)
                                                 for file in files),
                                             desc=f"Post '{self.title}'",
                                             ncols=BAR_WIDTH,
@@ -325,7 +349,7 @@ class Post:
         :rtype: list[:class:`.Comment`]
         """
 
-        response = get(f"/{self.service}/user/{self.creator_id}/post/{self.id}/comments")
+        response = (get if self.__kemo_session is None else self.__kemo_session.get)(f"/{self.service}/user/{self.creator_id}/post/{self.id}/comments")
         comments = []
 
         for comment_fields in response.json():
@@ -345,7 +369,7 @@ class Post:
         :rtype: :class:`bool`
         """
 
-        response = get(f"/{self.service}/user/{self.creator_id}/post/{self.id}/flag")
+        response = (get if self.__kemo_session is None else self.__kemo_session.get)(f"/{self.service}/user/{self.creator_id}/post/{self.id}/flag")
         return response.status_code == 200
 
 
@@ -358,12 +382,12 @@ class Post:
         :rtype: list[:class:`.PostRevision`]
         """
 
-        response = get(f"/{self.service}/user/{self.creator_id}/post/{self.id}/revisions")
+        response = (get if self.__kemo_session is None else self.__kemo_session.get)(f"/{self.service}/user/{self.creator_id}/post/{self.id}/revisions")
         revisions = []
 
         for revs_fields in response.json():
             revs_fields.update(creator=self.creator, is_revision=True)
-            subpost = Post.from_dict(**revs_fields)
+            subpost = Post.from_dict(**revs_fields).set_underlying_session(self.__kemo_session)
 
             revs_fields.update(post=subpost)
             revisions.append(PostRevision.from_dict(**revs_fields))

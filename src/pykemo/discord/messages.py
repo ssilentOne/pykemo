@@ -11,6 +11,7 @@ from ..files import File, FilesList
 from .users import DiscordUser
 
 if TYPE_CHECKING:
+    from ..sessions import KemoSession
     from .channels import DiscordChannel
 
 MessagesList: TypeAlias = list["DiscordMessage"]
@@ -60,6 +61,8 @@ class DiscordMessage:
     mentions: list = field(default_factory=list, repr=False)
     attachments: FilesList = field(default_factory=list, repr=False)
 
+    __kemo_session: Optional["KemoSession"] = field(default=None, init=False, repr=False)
+
 
     @classmethod
     def from_dict(cls, **fields) -> "DiscordMessage":
@@ -89,6 +92,24 @@ class DiscordMessage:
             attachments=[File.from_dict(**sanitize_data_url(attachment_fields))
                          for attachment_fields in fields.get("attachments")]
         )
+
+
+    def set_underlying_session(self, ks: "KemoSession") -> "DiscordMessage":
+        """
+        Quietly sets the session which the message uses for its requests.
+        
+        :param session: The session instance.
+        
+        :type session: :class:`.KemoSession`
+
+        :return: The same instance of the message, for convenience.
+        :rtype: :class:`.Creator`
+        """
+
+        self.__kemo_session = ks
+        for file in self._all_files:
+            file.with_session(self.__kemo_session)
+        return self
 
 
     def before(self, date: datetime) -> bool:

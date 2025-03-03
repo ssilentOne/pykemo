@@ -4,15 +4,17 @@ Account module.
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Literal, TypeAlias, Union
+from typing import Literal, TypeAlias, Union, Optional, TYPE_CHECKING
 
 from .._aux import MILI_DATE_FMT
-from ..core import get
 from ..creators import Creator, CreatorsList
 from ..exceptions import AlreadyLoggedIn, InvalidLogin, LoginError
 from ..posts import Post, PostsList
 from ..sessions import KemoSession
 from .role import AccountRole
+
+if TYPE_CHECKING:
+    from ..services import ServiceLike
 
 _AccountFields: TypeAlias = Literal["id", "username", "created_at", "role"]
 AccountDict: TypeAlias = dict[_AccountFields, Union[int, str, None]]
@@ -149,12 +151,12 @@ class Account:
         :rtype: list[:class:`.Creator`]
         """
 
-        res = get("/account/favorites", params={"type": "artist"}, session=self.session)
+        res = self.session.get("/account/favorites", params={"type": "artist"})
         creators = []
 
         for creator_fields in res.json():
-            creators.append(Creator.from_profile(creator_fields.get("service"),
-                                                 creator_fields.get("id")))
+            creators.append(self.get_creator(creator_fields.get("service"),
+                                             creator_fields.get("id")))
 
         return creators
 
@@ -167,10 +169,27 @@ class Account:
         :rtype: list[:class:`.Post`]
         """
 
-        res = get("/account/favorites", params={"type": "post"}, session=self.session)
+        res = self.session.get("/account/favorites", params={"type": "post"})
         posts = []
 
         for post_fields in res.json():
-            posts.append(Post.from_dict(**post_fields))
+            posts.append(Post.from_dict(**post_fields).set_underlying_session(self.session))
 
         return posts
+
+
+    def get_creator(self, service: "ServiceLike", creator_id: str) -> Optional[Creator]:
+        """
+        A wrapper for fetching a creator with the account session.
+
+        :param service: The service of the creator.
+        :param creator_id: The ID of the creator.
+
+        :type service: :type:`.ServiceLike`
+        :type creator_Id: :class:`str`
+
+        :return: The creator instance, if found. Otherwise returns ``None``.
+        :rtype: Optional[:class:`.Creator`]
+        """
+
+        return Creator.from_profile(service, creator_id, self.session)

@@ -7,6 +7,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Literal, Optional, TypeAlias, Union
 
 from .._aux import (
+    MILI_DATE_FMT,
     async_get_posts_responses,
     before_date,
     get_posts_responses,
@@ -16,7 +17,7 @@ from ..announcements import Announcement
 from ..core import UrlType, get
 from ..discord import ChannelsList, DiscordChannel
 from ..fanbox import Fancard
-from ..posts import DEFAULT_DATE_FMT, ELEMENTS_PER_PAGE, Post, PostsList
+from ..posts import ELEMENTS_PER_PAGE, Post, PostsList
 from ..services import ServiceType
 
 if TYPE_CHECKING:
@@ -67,7 +68,7 @@ class Creator:
     favorited: Optional[int] = field(repr=False)
     relation_id: Optional[int] = field(repr=False)
 
-    #unloaded fields
+    # unloaded fields
     _announcements: AnnouncementsList = field(default_factory=list, init=False, repr=False)
     __ann_loaded: bool = field(default=False, init=False, repr=False)
 
@@ -87,14 +88,12 @@ class Creator:
         :rtype: :class:`Creator`
         """
 
-        date_fmt = rf"{DEFAULT_DATE_FMT}.%f"
-
         return cls(
             id=fields.get("id", None) or fields.get("user"),
             name=fields.get("name", None),
             service=ServiceType(fields.get("service")),
-            indexed=datetime.strptime(fields.get("indexed"), date_fmt),
-            updated=datetime.strptime(fields.get("updated"), date_fmt),
+            indexed=datetime.strptime(fields.get("indexed"), MILI_DATE_FMT),
+            updated=datetime.strptime(fields.get("updated"), MILI_DATE_FMT),
             public_id=fields.get("public_id", None),
             favorited=fields.get("favorited", None),
             relation_id=fields.get("relation_id", None)

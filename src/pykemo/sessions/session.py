@@ -70,7 +70,7 @@ class KemoSession:
 
     def __enter__(self) -> "KemoSession":
         """
-        Enters the context of this type with the ``with`` statement.
+        Enters the context of this session with the ``with`` statement.
 
         :return: This very instance, to be used in the context.
         :rtype: :class:`.KemoSession`
@@ -84,7 +84,15 @@ class KemoSession:
         Exits the context of the session.
         """
 
-        self.__session.__exit__()
+        self.__session.__exit__(exc_type, exc_value, traceback)
+
+
+    def close(self) -> None:
+        """
+        Wrapper for closing the session.
+        """
+
+        self.__session.close()
 
 
     def request(self,
@@ -111,7 +119,7 @@ class KemoSession:
 
 
     def get(self,
-            endpoint: UrlLike,
+            endpoint: "UrlLike",
             params=None,
             url_type: UrlType=UrlType.API,
             **kwargs) -> "Response":
@@ -134,7 +142,7 @@ class KemoSession:
 
 
     def post(self,
-             endpoint: UrlLike,
+             endpoint: "UrlLike",
              data=None,
              json=None,
              url_type: UrlType=UrlType.API,
@@ -160,7 +168,7 @@ class KemoSession:
 
 
     def delete(self,
-               endpoint: UrlLike,
+               endpoint: "UrlLike",
                url_type: UrlType=UrlType.API,
                **kwargs) -> "Response":
         """

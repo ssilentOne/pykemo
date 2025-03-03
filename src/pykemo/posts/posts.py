@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Optional, TypeAlias, Union
 
 from tqdm import tqdm
 
-from .._aux import DEFAULT_DATE_FMT, sanitize_data_url, sanitize_str
+from .._aux import DEFAULT_DATE_FMT, MILI_DATE_FMT, sanitize_data_url, sanitize_str
 from ..comments import Comment
 from ..core import UrlType, get
 from ..files import BAR_WIDTH, File, FilesList
@@ -108,7 +108,7 @@ class Post:
         """
 
         added_field = fields.get("added", None)
-        added = (datetime.strptime(added_field, rf"{DEFAULT_DATE_FMT}.%f")
+        added = (datetime.strptime(added_field, MILI_DATE_FMT)
                  if added_field is not None
                  else None)
         

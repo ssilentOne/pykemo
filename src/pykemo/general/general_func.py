@@ -5,6 +5,7 @@ Module for auxiliar functions.
 from typing import TYPE_CHECKING, Optional
 
 from .._aux import FileHashResult, get_posts_responses
+from ..account import Account
 from ..core import get
 from ..creators import Creator, CreatorsList
 from ..discord import DiscordMessage
@@ -176,3 +177,14 @@ def get_app_version() -> str:
     """
 
     return get("/app_version").text
+
+
+def login(
+        user: str,
+        password: str,
+    ) -> Account:
+    """
+    An alias of :meth:`.Account.login()`
+    """
+
+    return Account.login(user, password)

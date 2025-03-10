@@ -5,7 +5,7 @@ Auxiliar functions module.
 from asyncio import gather
 from collections.abc import Coroutine
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Optional, TypeAlias, Union
+from typing import TYPE_CHECKING, Any, Callable, Optional, TypeAlias, Union
 
 if TYPE_CHECKING:
     from typing import Iterable
@@ -28,15 +28,8 @@ DEFAULT_DATE_FMT: str = r"%Y-%m-%dT%H:%M:%S"
 MILI_DATE_FMT: str = rf"{DEFAULT_DATE_FMT}.%f"
 "The default date, added miliseconds."
 
-ASYNC_FETCH_BATCH: int = 50
-"""
-Number of asynchronous request to make at a time in any given batch.
-"""
-
-DEFAULT_BATCH_SEND_SIZE: int = 10
-"""
-Inside the batch, how many asynchronous requests to send at a time.
-"""
+DEFAULT_PAGE_SIZE: int = 50
+"The default page size to retrieve posts responses."
 
 
 def sanitize_data_url(file_dict: "FileDict") -> "FileDict":
@@ -248,7 +241,8 @@ async def get_posts_responses_bodies(
         endpoint: "UrlLike",
         query: Optional[str]=None,
         max_posts: Optional[int]=None,
-        page_stepping: int,
+        page_stepping: int=DEFAULT_PAGE_SIZE,
+        post_process: Optional[Callable[[JsonBody], JsonBody]]=None,
         kemo_session: "KemoSession") -> list[JsonBody]:
     """
     Gets the responses of posts by page. The, it unpacks their bodies into a JSON-like dictionary.
@@ -257,12 +251,14 @@ async def get_posts_responses_bodies(
     :param query: A search query string to filter the results.
     :param max_posts: The max posts to fit into the final list. If not set, the minimum value possible will be used.
     :param page_stepping: The stepping of the paging.
+    :param post_process: A small function to be applied after unpacking each response body.
     :param kemo_session: The session to make the requests with.
 
     :type endpoint: :type:`.UrlLike`
     :type query: Optional[:class:`str`]
     :type max_posts: Optional[:class:`int`]
     :type page_stepping: :class:`int`
+    :type post_process: Optional[Callable[[:type:`.JsonBody`], :type:`.JsonBody`]]
     :type kemosession: :class:`.KemoSession`
 
     :return: A list of response bodies, to be further processed.
@@ -273,7 +269,8 @@ async def get_posts_responses_bodies(
         res = await task
 
         if res is not None and res.status != 429:
-            return await res.json()
+            raw_body = await res.json()
+            return (raw_body if post_process is None else post_process(raw_body))
 
         return {}
 
@@ -297,7 +294,7 @@ async def get_posts_responses_bodies(
 
     # asyncio.gather() makes sure the order of the pages in the list is the same, even though
     # you have to wait for all of them to finish first
-    async for body in gather(*tasks):
+    for body in await gather(*tasks):
         # extend() is used instead of append() because each response is a list of bodies itself
         if body:
             bodies.extend(body)

@@ -59,11 +59,11 @@ async def get_creators(kemo_session: "KemoSession") -> CreatorsList:
 
 
 async def get_posts(query: Optional[str]=None,
-              *,
-              max_posts: int=ELEMENTS_PER_PAGE,
-              before: Optional["datetime"]=None,
-              since: Optional["datetime"]=None,
-              kemo_session: "KemoSession") -> PostsList:
+                    *,
+                    max_posts: int=ELEMENTS_PER_PAGE,
+                    before: Optional["datetime"]=None,
+                    since: Optional["datetime"]=None,
+                    kemo_session: "KemoSession") -> PostsList:
     """
     Gets all posts that coincide with the given parameters.
 
@@ -90,10 +90,12 @@ async def get_posts(query: Optional[str]=None,
 
     posts_tasks = []
 
-    async for post_fields in get_posts_responses_bodies(
+    for post_fields in await get_posts_responses_bodies(
         endpoint="/posts",
         query=query,
         max_posts=max_posts,
+        page_stepping=ELEMENTS_PER_PAGE,
+        post_process=(lambda fields: fields["posts"]),
         kemo_session=kemo_session
     ):
         published_str = post_fields["published"]

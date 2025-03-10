@@ -126,8 +126,7 @@ The [dependencies](./requirements.txt) are as follows:
 
 | Name | Version | Rationale |
 | :-: | :-: | :-: |
-| [grequests](https://pypi.org/project/grequests/) | 0.7.0 | For doing asynchronous requests. |
-| [requests](https://pypi.org/project/requests/) | 2.32.3 | The base library for doing HTTP requests. |
+| [aiohttp](https://pypi.org/project/aiohttp/) | 3.11.13 | For doing asynchronous HTTP requests. |
 | [tqdm](https://pypi.org/project/tqdm/) | 4.66.4 | QoL library for showing fancy loading bars in downloads. |
 
 <hr style="height:3px; width:50%" />

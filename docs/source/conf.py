@@ -42,4 +42,4 @@ epub_show_urls = "footnote"
 
 # -- autodoc extension configs
 autodoc_typehints = "description"
-autodoc_mock_imports = ["grequests", "requests", "tqdm"]
+autodoc_mock_imports = ["aiohttp", "tqdm"]

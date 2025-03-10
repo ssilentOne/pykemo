@@ -135,7 +135,7 @@ class DiscordChannel:
 
         msgs_tasks = []
 
-        async for msg_fields in get_posts_responses_bodies(
+        for msg_fields in await get_posts_responses_bodies(
             endpoint=f"/discord/channel/{self.id}",
             max_posts=max_msg,
             page_stepping=OFFSET_STEPPING,

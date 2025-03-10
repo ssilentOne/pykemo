@@ -267,7 +267,7 @@ class Creator:
 
         posts_tasks = []
 
-        async for post_fields in get_posts_responses_bodies(
+        for post_fields in await get_posts_responses_bodies(
             endpoint=f"/{self.service}/user/{self.id}",
             query=query,
             max_posts=max_posts,
@@ -306,7 +306,7 @@ class Creator:
         if response.status == 404:
             return None
 
-        return await add_session_to_post(Post.from_dict(**(await response.json())),
+        return await add_session_to_post(Post.from_dict(**(await response.json()).get("post")),
                                          self.__kemo_session)
 
 

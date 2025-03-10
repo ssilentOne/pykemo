@@ -2,6 +2,7 @@
 Comments module.
 """
 
+from asyncio import gather
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional
@@ -21,7 +22,7 @@ DEFAULT_COMMENT_DATE_FMT: str = r"%Y-%m-%dT%H:%M:%S"
 class Comment:
     """
     Comment of a post.
-    Usually instantiated through :attr:`.Post.comments`
+    Usually instantiated through :meth:`.Post.comments()`
 
     :param id: The ID of the comment itself.
     :param parent_id: The ID of the parent comment. Used when the comment itself is a response to another.
@@ -56,7 +57,7 @@ class Comment:
 
 
     @classmethod
-    def from_dict(cls, **fields) -> "Comment":
+    async def from_dict(cls, **fields) -> "Comment":
         """
         Initializes a Comment instance from a response fields.
 
@@ -71,7 +72,8 @@ class Comment:
             commenter_name=fields.get("commenter_name"),
             content=fields.get("content", ""),
             published=datetime.strptime(fields.get("published"), DEFAULT_COMMENT_DATE_FMT),
-            revisions=[CommentRevision.from_dict(**rev) for rev in fields.get("revisions")],
+            revisions=await gather(*[CommentRevision.from_dict(**rev)
+                                     for rev in fields.get("revisions")]),
             commenter=fields.get("creator"),
             post=fields.get("post")
         )

@@ -56,7 +56,7 @@ class DiscordUser:
 
 
     @classmethod
-    def from_dict(cls, **fields) -> "DiscordUser":
+    async def from_dict(cls, **fields) -> "DiscordUser":
         """
         Initializes a DiscordUser instance from a response fields.
 

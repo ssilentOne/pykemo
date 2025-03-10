@@ -2,11 +2,13 @@
 Account module.
 """
 
+from asyncio import gather
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Literal, TypeAlias, Union, Optional, TYPE_CHECKING
+from types import TracebackType
+from typing import TYPE_CHECKING, Literal, Optional, TypeAlias, Union
 
-from .._aux import MILI_DATE_FMT
+from .._aux import MILI_DATE_FMT, add_session_to_post
 from ..creators import Creator, CreatorsList
 from ..exceptions import AlreadyLoggedIn, InvalidLogin, LoginError
 from ..posts import Post, PostsList
@@ -47,7 +49,7 @@ class Account:
     session: KemoSession = field(repr=False)
 
 
-    def __enter__(self) -> "Account":
+    async def __aenter__(self) -> "Account":
         """
         Enters the context of this account with the ``with`` statement.
 
@@ -58,19 +60,21 @@ class Account:
         return self
 
 
-    def __exit__(self, exc_type, exc_value, traceback) -> None:
+    async def __aexit__(self,
+                        _exc_type: Optional[type[BaseException]],
+                        _exc_val: Optional[BaseException],
+                        _exc_tb: Optional[TracebackType]) -> None:
         """
         Exits the context of the type.
         """
 
-        self.logout(close_session=False) # the method below is better for closing the session
-        self.session.__exit__(exc_type, exc_value, traceback)
+        await self.logout()
 
 
     @classmethod
-    def login(cls,
-              user: str,
-              password: str) -> "Account":
+    async def login(cls,
+                    user: str,
+                    password: str) -> "Account":
         """
         Tries to login with a given user and password.
         
@@ -89,49 +93,44 @@ class Account:
         """     
 
         session = KemoSession()
-        login_res = session.post("/authentication/login", json=dict(username=user, password=password))
+        login_res = await session.post("/authentication/login", json=dict(username=user, password=password))
+        res_json = await login_res.json()
 
         # invalid due to user errors
-        if login_res.status_code == 400:
-            session.__exit__()
-            raise InvalidLogin(login_res.json.get("error", "The login is invalid due to user errors"))
+        if login_res.status == 400:
+            session.close()
+            raise InvalidLogin(res_json.get("error", "The login is invalid due to user errors"))
 
         # already logged in
-        elif login_res.status_code == 409:
-            session.__exit__()
-            raise AlreadyLoggedIn(login_res.json.get("error", "The user is already logged in"))
+        elif login_res.status == 409:
+            session.close()
+            raise AlreadyLoggedIn(res_json.get("error", "The user is already logged in"))
 
         # another unknown error
-        elif login_res.status_code != 200:
-            session.__exit__()
-            raise LoginError(login_res.json.get("error", "An unexpected error ocurred during the login"))
+        elif login_res.status != 200:
+            session.close()
+            raise LoginError(res_json.get("error", "An unexpected error ocurred during the login"))
 
         # at this point the session instance already has the session cookie inside
-        account_data = login_res.json()
         return cls(
-            id=account_data.get("id"),
-            username=account_data.get("username"),
-            created_at=datetime.strptime(account_data.get("created_at"), MILI_DATE_FMT),
-            role=AccountRole(account_data.get("role")),
+            id=res_json.get("id"),
+            username=res_json.get("username"),
+            created_at=datetime.strptime(res_json.get("created_at"), MILI_DATE_FMT),
+            role=AccountRole(res_json.get("role")),
             session=session
         )
 
 
-    def logout(self, close_session: bool=True) -> None:
+    async def logout(self) -> None:
         """
         Log out of the session.
-        
-        :param close_session: If to also close the underlying session instance., defaults to `True`
-        
-        :type close_session: :class:`bool`, optional
         """
 
-        self.session.post("/authentication/logout")
-        if close_session:
-            self.session.close()
+        await self.session.post("/authentication/logout")
+        await self.session.close()
 
 
-    def favorite_artists(self) -> CreatorsList:
+    async def favorite_artists(self) -> CreatorsList:
         """
         Tries to retrieve this account's favorite artists.
         Alias for :meth:`.favorite_creators()`.
@@ -140,10 +139,10 @@ class Account:
         :rtype: list[:class:`.Creator`]
         """
 
-        return self.favorite_creators()
+        return await self.favorite_creators()
 
 
-    def favorite_creators(self) -> CreatorsList:
+    async def favorite_creators(self) -> CreatorsList:
         """
         Tries to retrieve this account's favorite creators.
 
@@ -151,17 +150,17 @@ class Account:
         :rtype: list[:class:`.Creator`]
         """
 
-        res = self.session.get("/account/favorites", params={"type": "artist"})
-        creators = []
+        res = await self.session.get("/account/favorites", params={"type": "artist"})
+        creator_tasks = []
 
-        for creator_fields in res.json():
-            creators.append(self.get_creator(creator_fields.get("service"),
-                                             creator_fields.get("id")))
+        async for creator_fields in res.json():
+            creator_tasks.append(self.get_creator(creator_fields.get("service"),
+                                                  creator_fields.get("id")))
 
-        return creators
+        return await gather(*creator_tasks)
 
 
-    def favorite_posts(self) -> PostsList:
+    async def favorite_posts(self) -> PostsList:
         """
         Tries to retrieve this account's favorite posts.
 
@@ -169,16 +168,16 @@ class Account:
         :rtype: list[:class:`.Post`]
         """
 
-        res = self.session.get("/account/favorites", params={"type": "post"})
-        posts = []
+        res = await self.session.get("/account/favorites", params={"type": "post"})
+        posts_tasks = []
 
-        for post_fields in res.json():
-            posts.append(Post.from_dict(**post_fields).set_underlying_session(self.session))
+        async for post_fields in res.json():
+            posts_tasks.append(add_session_to_post(Post.from_dict(**post_fields), self.session))
 
-        return posts
+        return await gather(*posts_tasks)
 
 
-    def get_creator(self, service: "ServiceLike", creator_id: str) -> Optional[Creator]:
+    async def get_creator(self, service: "ServiceLike", creator_id: str) -> Optional[Creator]:
         """
         A wrapper for fetching a creator with the account session.
 
@@ -192,4 +191,4 @@ class Account:
         :rtype: Optional[:class:`.Creator`]
         """
 
-        return Creator.from_profile(service, creator_id, self.session)
+        return await Creator.from_profile(service, creator_id, self.session)

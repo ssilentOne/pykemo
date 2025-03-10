@@ -2,7 +2,7 @@
 Posts module.
 """
 
-from asyncio import run as asyncio_run
+from asyncio import gather
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -10,9 +10,15 @@ from typing import TYPE_CHECKING, Optional, TypeAlias, Union
 
 from tqdm.asyncio import tqdm_asyncio
 
-from .._aux import DEFAULT_DATE_FMT, MILI_DATE_FMT, sanitize_data_url, sanitize_str
+from .._aux import (
+    DEFAULT_DATE_FMT,
+    MILI_DATE_FMT,
+    add_session_to_post,
+    sanitize_data_url,
+    sanitize_str,
+)
 from ..comments import Comment
-from ..core import UrlType, get
+from ..core import UrlType
 from ..files import BAR_WIDTH, File, FilesList
 from ..services import ServiceType
 from .post_revisions import PostRevision
@@ -104,7 +110,7 @@ class Post:
 
 
     @classmethod
-    def from_dict(cls, **fields) -> "Post":
+    async def from_dict(cls, **fields) -> "Post":
         """
         Initializes a Post instance from a response fields.
 
@@ -139,16 +145,15 @@ class Post:
             added=added,
             published=datetime.strptime(post_fields.get("published"), DEFAULT_DATE_FMT),
             edited=edited,
-            file=(File.from_dict(**sanitize_data_url(file_dict)) if file_dict else None),
-            attachments=[File.from_dict(**sanitize_data_url(attachment_fields))
-                         for attachment_fields in attachments],
+            file=(await File.from_dict(**sanitize_data_url(file_dict)) if file_dict else None),
+            attachments=await gather(*[File.from_dict(**sanitize_data_url(attachment_fields))
+                         for attachment_fields in attachments]),
             creator=post_fields.get("creator", None),
             is_revision=post_fields.get("is_revision", False)
         )
 
 
-    @property
-    def comments(self) -> CommentsList:
+    async def comments(self) -> CommentsList:
         """
         :return: The comments of the post.
         :rtype: list[:class:`.Comment`]
@@ -156,12 +161,11 @@ class Post:
 
         if not self.__comm_loaded:
             self.__comm_loaded = True
-            self._comments = self.fetch_comments()
+            self._comments = await self.fetch_comments()
 
         return self._comments
 
-    @property
-    def flagged(self) -> bool:
+    async def flagged(self) -> bool:
         """
         :return: Wether the post is flagged for reimport.
         :rtype: :class:`bool`
@@ -169,13 +173,12 @@ class Post:
 
         if not self.__flag_loaded and not self.is_revision:
             self.__flag_loaded = True
-            self._flagged = self._fetch_flagged()
+            self._flagged = await self._fetch_flagged()
 
         return self._flagged
 
 
-    @property
-    def revisions(self) -> PostRevsList:
+    async def revisions(self) -> PostRevsList:
         """
         :return: All the revisions of this post.
         :rtype: list[:class:`.PostRevision`]
@@ -183,7 +186,7 @@ class Post:
 
         if not self.__revs_loaded and not self.is_revision:
             self.__revs_loaded = True
-            self._revisions = self._fetch_revisions()
+            self._revisions = await self._fetch_revisions()
 
         return self._revisions
 
@@ -263,32 +266,40 @@ class Post:
         return san.rstrip(".")
 
 
-    def save(self,
-             path: Union["PathLike", Path, None]=None,
-             force: bool=True,
-             verbose: bool=True) -> bool:
+    async def save(self,
+                   path: Union["PathLike", Path, None]=None,
+                   *,
+                   force: bool=True,
+                   verbose: bool=True,
+                   pos: int=0,
+                   verbose_children: Optional[bool]=None) -> bool:
         """
         Tries to save all the files in the post. Even if one file fails, it still tries to download
         the rest.
 
         :param path: The optional path where to store all the files. If it ends with '/*', it
                      will use its default name inside such folder.
-        :param force: Wether to overwrite existing files
-        :param verbose: Wether to track progress.
+        :param force: Wether to overwrite existing files, defaults to ``True``
+        :param verbose: Wether to track progress, defaults to ``True``
+        :param pos: The position order of the progress bar, defaults to 0
+        :param verbose_children: Wether to track progress for files, defaults to value of ``verbose``.
 
         :type path: :class:`PathLike` | :class:`Path` | ``None``
-        :type force: :class:`bool`
-        :type verbose: :class:`bool`
+        :type force: :class:`bool`, optional
+        :type verbose: :class:`bool`, optional
+        :type pos: :class:`int`, optional
+        :type verbose_children: :class:`bool`, optional
 
         :return: ``True`` if the download of `all` files was successful, or ``False`` if not.
         :rtype: :class:`bool`
         """
 
         files = self._all_files
-        if verbose:
-            if not files:
-                print(f"Post '{self.title}' doesn't have attachments to download. Ignoring...")
-                return True
+        verb_children = (verbose_children if verbose_children is not None else verbose)
+        if verbose and not files:
+            # a normal print() will overlap the progress bars
+            tqdm_asyncio.write(f"Post '{self.title}' doesn't have attachments to download. Ignoring...")
+            return True
 
         san_title = self.sanitized_title()
 
@@ -301,95 +312,83 @@ class Post:
 
         path.mkdir(parents=True, exist_ok=True)
 
-        return asyncio_run(self._save_task(files, path, force, verbose))
-
-
-    async def _save_task(self,
-                         files: FilesList,
-                         path: Union["PathLike", Path, None]=None,
-                         force: bool=True,
-                         verbose: bool=True) -> bool:
-        """
-        Wrapper for saving files as a coroutine.
-
-        :param files: The list of files to download.
-        :param path: The optional path where to store all the files. If it ends with '/*', it
-                     will use its default name inside such folder.
-        :param force: Wether to overwrite existing files
-        :param verbose: Wether to track progress.
-
-        :type files: list[:class:`.File`]
-        :type path: :class:`PathLike` | :class:`Path` | ``None``
-        :type force: :class:`bool`
-        :type verbose: :class:`bool`
-
-        :return: ``True`` if the download of `all` files was successful, or ``False`` if not.
-        :rtype: :class:`bool`
-        """
-
-        results = await tqdm_asyncio.gather(*(file.co_save(path, force=force, verbose=verbose)
-                                                for file in files),
+        results = await tqdm_asyncio.gather(*(file.save(path, force=force,
+                                                        verbose=verb_children, show_order=pos+i+1)
+                                             for (i, file) in enumerate(files)),
+                                            miniters=1,
                                             desc=f"Post '{self.title}'",
                                             ncols=BAR_WIDTH,
+                                            dynamic_ncols=True,
                                             unit="file",
-                                            position=0,
-                                            smoothing=1.0,
+                                            leave=True,
+                                            position=pos,
                                             colour="blue")
-
         return all(results)
 
 
-    def fetch_comments(self) -> CommentsList:
+    async def fetch_comments(self) -> CommentsList:
         """
         Fetches the comments of the post.
     
-        .. warning:: This is designed for internal purposes, as it is recommended to use the :attr:`.comments` property instead. However, it can also be used as-is to prevent using a potentially outdated field.
+        .. warning:: This is designed for internal purposes, as it is recommended to use the :meth:`.comments()` property instead. However, it can also be used as-is to prevent using a potentially outdated field.
 
-        :return: A list of the comments of this post.
+        :return: A list of the comments of this post. Might be empty if there is n osession available.
         :rtype: list[:class:`.Comment`]
         """
 
-        response = (get if self.__kemo_session is None else self.__kemo_session.get)(f"/{self.service}/user/{self.creator_id}/post/{self.id}/comments")
-        comments = []
+        if self.__kemo_session is None:
+            return []
 
-        for comment_fields in response.json():
+        response = await self.__kemo_session.get(f"/{self.service}/user/{self.creator_id}/post/{self.id}/comments")
+        comments_tasks = []
+
+        async for comment_fields in response.json():
             comment_fields.update(creator=self.creator, post=self)
-            comments.append(Comment.from_dict(**comment_fields))
+            comments_tasks.append(Comment.from_dict(**comment_fields))
 
-        return comments
+        return await gather(*comments_tasks)
 
-    def _fetch_flagged(self) -> bool:
+    async def _fetch_flagged(self) -> bool:
         """
         .. warning:: `(for internal purposes)`
         Checks with a request if a post is flagged for reimport.
         According to the docs, it should have status code of 200 if it is flagged, and
         404 if it's not.
 
-        :return: Wether or not the post is flagged for reimport.
+        :return: Wether or not the post is flagged for reimport. If there is not a session assigned, it will return ``False``.
         :rtype: :class:`bool`
         """
 
-        response = (get if self.__kemo_session is None else self.__kemo_session.get)(f"/{self.service}/user/{self.creator_id}/post/{self.id}/flag")
-        return response.status_code == 200
+        if self.__kemo_session is None:
+            return False
+
+        response = await self.__kemo_session.get(f"/{self.service}/user/{self.creator_id}/post/{self.id}/flag")
+        return response.status == 200
 
 
-    def _fetch_revisions(self) -> PostRevsList:
+    async def _fetch_revisions(self) -> PostRevsList:
         """
         .. warning:: `(for internal purposes)`
         Fetches a request all the revisions of the post.
 
-        :return: All the revisions of this post, if any.
+        :return: All the revisions of this post, if any. If there is no session assigned, an empty list will be returned.
         :rtype: list[:class:`.PostRevision`]
         """
 
-        response = (get if self.__kemo_session is None else self.__kemo_session.get)(f"/{self.service}/user/{self.creator_id}/post/{self.id}/revisions")
-        revisions = []
+        if self.__kemo_session is None:
+            return []
 
-        for revs_fields in response.json():
-            revs_fields.update(creator=self.creator, is_revision=True)
-            subpost = Post.from_dict(**revs_fields).set_underlying_session(self.__kemo_session)
+        response = await self.__kemo_session.get(f"/{self.service}/user/{self.creator_id}/post/{self.id}/revisions")
+        revisions_tasks = []
 
-            revs_fields.update(post=subpost)
-            revisions.append(PostRevision.from_dict(**revs_fields))
+        async def revision_from_post(fields: dict) -> PostRevision:
+            fields.update(creator=self.creator, is_revision=True)
+            subpost = await add_session_to_post(Post.from_dict(**fields), self.__kemo_session)
 
-        return revisions
+            fields.update(post=subpost)
+            return await PostRevision.from_dict(**fields)
+
+        async for revs_fields in response.json():
+            revisions_tasks.append(revision_from_post(revs_fields))
+
+        return await gather(*revisions_tasks)

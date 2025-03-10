@@ -2,18 +2,13 @@
 Kemono session module.
 """
 
-from typing import TYPE_CHECKING, TypeAlias
+from types import TracebackType
+from typing import TYPE_CHECKING, Optional, TypeAlias
 
-from requests import Session
-from requests.adapters import HTTPAdapter, Retry
+from aiohttp import ClientSession
 
 from ..core import (
-    ADAPTER_PREFIX,
-    BACKOFF_FACTOR,
-    FORCELIST,
-    MAX_RETRIES,
     UrlType,
-    async_get,
     delete,
     get,
     post,
@@ -21,8 +16,7 @@ from ..core import (
 )
 
 if TYPE_CHECKING:
-    from grequests import AsyncRequest
-    from requests import Response
+    from aiohttp import ClientResponse
 
     from ..core import UrlLike
 
@@ -44,10 +38,7 @@ class KemoSession:
         Initializes the instance with custom adapters.
         """
 
-        self.__session = Session()
-        self.__session.mount(ADAPTER_PREFIX, HTTPAdapter(max_retries=Retry(total=MAX_RETRIES,
-                                                                 backoff_factor=BACKOFF_FACTOR,
-                                                                 status_forcelist=FORCELIST)))
+        self.__aio_session: ClientSession = ClientSession()
 
 
     @classmethod
@@ -70,148 +61,115 @@ class KemoSession:
         return obj
 
 
-    def __enter__(self) -> "KemoSession":
+    async def close(self) -> None:
         """
-        Enters the context of this session with the ``with`` statement.
-
-        :return: This very instance, to be used in the context.
-        :rtype: :class:`.KemoSession`
+        A wrapper for closing the async session.
         """
 
-        return self.__session.__enter__()
+        await self.__aio_session.close()
 
 
-    def __exit__(self, exc_type, exc_value, traceback) -> None:
-        """
-        Exits the context of the session.
-        """
-
-        self.__session.__exit__(exc_type, exc_value, traceback)
+    async def __aenter__(self) -> "KemoSession":
+        return self
 
 
-    def close(self) -> None:
-        """
-        Wrapper for closing the session.
-        """
+    async def __aexit__(self,
+                        _exc_type: Optional[type[BaseException]],
+                        _exc_val: Optional[BaseException],
+                        _exc_tb: Optional[TracebackType]) -> None:
+        await self.close()
 
-        self.__session.close()
 
-
-    def request(self,
-                method: str,
-                endpoint: "UrlLike",
-                url_type: UrlType=UrlType.API,
-                **kwargs) -> "Response":
+    async def request(self,
+                      method: str,
+                      endpoint: "UrlLike",
+                      base_url: UrlType=UrlType.API,
+                      **kwargs) -> "ClientResponse":
         """
         Overcharges the request to include the session cookie.
 
         :param method: The HTTP method to use.
         :param endpoint: The endpoint to map to.
-        :param url_type: The root URL to use.
+        :param base_url: The root URL to use.
 
         :type method: :class:`str`
         :type endpoint: :type:`.UrlLike`
-        :type url_type: Optional[:class:`.UrlType`]
+        :type base_url: Optional[:class:`.UrlType`]
 
         :return: The HTTP response.
-        :rtype: `Response <https://requests.readthedocs.io/en/latest/api/#requests.Response>`_
+        :rtype: `ClientResponse <https://docs.aiohttp.org/en/v3.11.13/client_reference.html#aiohttp.ClientResponse>`_
         """
 
-        return request(method, endpoint, url_type, session=self.__session, **kwargs)
+        return await request(method, endpoint, base_url=base_url, session=self.__aio_session, **kwargs)
 
 
-    def get(self,
-            endpoint: "UrlLike",
-            params=None,
-            url_type: UrlType=UrlType.API,
-            **kwargs) -> "Response":
+    async def get(self,
+                  endpoint: "UrlLike",
+                  params=None,
+                  base_url: UrlType=UrlType.API,
+                  **kwargs) -> "ClientResponse":
         """
         Overcharges a GET request.
 
         :param endpoint: The endpoint to map to.
         :param params: A ``dict`` with the parameters of the request. Usually of type ``dict[str, int | str | None]``
-        :param url_type: The root URL to use.
+        :param base_url: The root URL to use.
 
         :type endpoint: :type:`.UrlLike`
         :type params: Optional[:class:`dict`]
-        :type url_type: Optional[:class:`.UrlType`]
+        :type base_url: Optional[:class:`.UrlType`]
 
         :return: The HTTP response.
-        :rtype: `Response <https://requests.readthedocs.io/en/latest/api/#requests.Response>`_
+        :rtype: `ClientResponse <https://docs.aiohttp.org/en/v3.11.13/client_reference.html#aiohttp.ClientResponse>`_
         """
 
-        return get(endpoint, params, url_type, session=self.__session, **kwargs)
+        return await get(endpoint, params=params, base_url=base_url, session=self.__aio_session, **kwargs)
 
 
-    def post(self,
-             endpoint: "UrlLike",
-             data=None,
-             json=None,
-             url_type: UrlType=UrlType.API,
-             **kwargs) -> "Response":
+    async def post(self,
+                   endpoint: "UrlLike",
+                   data=None,
+                   json=None,
+                   base_url: UrlType=UrlType.API,
+                   **kwargs) -> "ClientResponse":
         """
         Overcharges a POST request.
         
         :param endpoint: The endpoint to map to.
         :param data: Dictionary, list of file-like object to send in the body of the request.
         :param json: JSON-like to send in the body of the request.
-        :param url_type: The root URL to use.
+        :param base_url: The root URL to use.
 
         :type endpoint: :type:`.UrlLike`
         :type data: Optional[:class:`Any`]
         :type json: Optional[:class:`dict`]
-        :type url_type: Optional[:class:`.UrlType`]
+        :type base_url: Optional[:class:`.UrlType`]
 
         :return: The HTTP response.
-        :rtype: `Response <https://requests.readthedocs.io/en/latest/api/#requests.Response>`_
+        :rtype: `ClientResponse <https://docs.aiohttp.org/en/v3.11.13/client_reference.html#aiohttp.ClientResponse>`_
         """
 
-        return post(endpoint, data, json, url_type, session=self.__session, **kwargs)
+        return await post(endpoint, data=data, json=json, base_url=base_url, session=self.__aio_session, **kwargs)
 
 
-    def delete(self,
-               endpoint: "UrlLike",
-               url_type: UrlType=UrlType.API,
-               **kwargs) -> "Response":
+    async def delete(self,
+                     endpoint: "UrlLike",
+                     base_url: UrlType=UrlType.API,
+                     **kwargs) -> "ClientResponse":
         """
         Overcharges a DELETE request.
         
         :param endpoint: The endpoint to map to.
-        :param url_type: The root URL to use.
+        :param base_url: The root URL to use.
 
         :type endpoint: :type:`.UrlLike`
-        :type url_type: Optional[:class:`.UrlType`]
+        :type base_url: Optional[:class:`.UrlType`]
 
         :return: The HTTP response.
-        :rtype: `Response <https://requests.readthedocs.io/en/latest/api/#requests.Response>`_
+        :rtype: `ClientResponse <https://docs.aiohttp.org/en/v3.11.13/client_reference.html#aiohttp.ClientResponse>`_
         """
 
-        return delete(endpoint, url_type, session=self.__session, **kwargs)
-
-
-    def aget(self,
-                  endpoint: "UrlLike",
-                  params=None,
-                  url_type: UrlType=UrlType.API,
-                  **kwargs) -> "AsyncRequest":
-        """
-        Overcharges an asynchronous GET request.
-
-        :param endpoint: The endpoint to map to.
-        :param params: A ``dict`` with the parameters of the request. Usually of type ``dict[str, int | str | None]``
-        :param url_type: The root URL to use.
-
-        :type endpoint: :type:`.UrlLike`
-        :type params: Optional[:class:`dict`]
-        :type url_type: Optional[:class:`.UrlType`]
-
-        :return: An unsent asynchronous request.
-        :rtype: :class:`grequests.AsyncRequest`
-
-        .. note:: Note that this does not return a response, but rather an unsent asynchronous request.
-        """
-
-        return async_get(endpoint, params, url_type, self.__session, **kwargs)
+        return await delete(endpoint, base_url=base_url, session=self.__aio_session, **kwargs)
 
 
     def set_session_cookie(self, cookie_auth: TokenValue) -> None:
@@ -221,4 +179,4 @@ class KemoSession:
         :type cookie_auth: :type:`.TokenValue`
         """
 
-        self.__session.cookies.set("session", str(cookie_auth), domain=SITE_DOMAIN)
+        self.__aio_session.cookie_jar.update_cookies({"session": str(cookie_auth)}, response_url=SITE_DOMAIN)

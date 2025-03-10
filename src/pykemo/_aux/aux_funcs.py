@@ -2,24 +2,25 @@
 Auxiliar functions module.
 """
 
+from asyncio import gather
+from collections.abc import Coroutine
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional, TypeAlias, Union
-
-from grequests import map as async_map
-
-from ..core import async_get, get
+from typing import TYPE_CHECKING, Any, Optional, TypeAlias, Union
 
 if TYPE_CHECKING:
     from typing import Iterable
 
-    from requests import Response, Session
+    from aiohttp import ClientResponse
 
     from ..core import UrlLike
+    from ..discord import DiscordMessage
     from ..files import FileDict
+    from ..posts import Post
     from ..sessions import KemoSession
 
 DateOrFmt: TypeAlias = Union[str, datetime]
 ParamsFmtDict: TypeAlias = dict[str, Union[str, int]]
+JsonBody: TypeAlias = dict # Could have anything inside, really
 
 DEFAULT_DATE_FMT: str = r"%Y-%m-%dT%H:%M:%S"
 "The default date formatting to use."
@@ -165,6 +166,46 @@ def sanitize_str(src: str,
     return cpy
 
 
+async def add_session_to_post(
+    post_task: Coroutine[Any, Any, "Post"],
+    session: "KemoSession"
+) -> "Post":
+    """
+    Resolves the task, and _then_ assigns a session to a resolved post.
+    
+    :param post_task: The task to be awaited.
+    :param session: The session to assign.
+    
+    :type post_task: Coroutine[Any, Any, :class:`.Post`]
+    :type session: :class:`.KemoSession`
+    
+    :return: The post, as it would be returned by the task, but with the session assigned.
+    :rtype: :class:`.Post`
+    """
+
+    return (await post_task).set_underlying_session(session)
+
+
+async def add_session_to_message(
+    msg_task: Coroutine[Any, Any, "DiscordMessage"],
+    session: "KemoSession"
+) -> "DiscordMessage":
+    """
+    Resolves the task, and _then_ assigns a session to a resolved discord message.
+    
+    :param post_task: The task to be awaited.
+    :param session: The session to assign.
+    
+    :type post_task: Coroutine[Any, Any, :class:`.DiscordMessage`]
+    :type session: :class:`.KemoSession`
+    
+    :return: The message, as it would be returned by the task, but with the session assigned.
+    :rtype: :class:`.DiscordMessage`
+    """
+
+    return (await msg_task).set_underlying_session(session)
+
+
 def query_params(query: Optional[str]=None,
                  offset: Optional[int]=None,
                  stepping: int=0) -> ParamsFmtDict:
@@ -179,6 +220,8 @@ def query_params(query: Optional[str]=None,
     :type query: Optional[:class:`str`]
     :type offset: Optional[:class:`int`]
     :type stepping: :class:`int`
+
+    :raises ValueError: If ``offset`` is not a multiple of ``stepping``.
 
     :return: A dictionary already poblated with the parameters.
     :rtype: :type:`.ParamsFmtDict`
@@ -200,18 +243,19 @@ def query_params(query: Optional[str]=None,
     return params
 
 
-def get_posts_responses(*,
-                        endpoint: "UrlLike",
-                        query: Optional[str]=None,
-                        max_posts: Optional[int]=None,
-                        page_stepping: int,
-                        kemo_session: Optional["KemoSession"]=None) -> list["Response"]:
+async def get_posts_responses_bodies(
+        *,
+        endpoint: "UrlLike",
+        query: Optional[str]=None,
+        max_posts: Optional[int]=None,
+        page_stepping: int,
+        kemo_session: "KemoSession") -> list[JsonBody]:
     """
-    Gets the responses of posts by page.
+    Gets the responses of posts by page. The, it unpacks their bodies into a JSON-like dictionary.
 
     :param endpoint: The endpoint that the request will map to.
     :param query: A search query string to filter the results.
-    :param max_posts: The max posts to fit into the final list.
+    :param max_posts: The max posts to fit into the final list. If not set, the minimum value possible will be used.
     :param page_stepping: The stepping of the paging.
     :param kemo_session: The session to make the requests with.
 
@@ -219,116 +263,43 @@ def get_posts_responses(*,
     :type query: Optional[:class:`str`]
     :type max_posts: Optional[:class:`int`]
     :type page_stepping: :class:`int`
-    :type kemosession: Optional[:class:`.KemoSession`_]
+    :type kemosession: :class:`.KemoSession`
 
-    :return: A list of :class:`requests.Response`, to be further processed.
-    :rtype: list[`Response <https://requests.readthedocs.io/en/latest/api/#requests.Response>`_]
+    :return: A list of response bodies, to be further processed.
+    :rtype: list[:type:`.JsonBody`]
     """
 
-    responses = []
-    get_func = (get if kemo_session is None else kemo_session.get)
+    async def unpack_json(task: Coroutine[Any, Any, "ClientResponse"]) -> JsonBody:
+        res = await task
 
-    if max_posts is None: # Try to get ALL the posts
-        cur_page = 0
-        while True:
-            page_response = get_func(
-                endpoint,
-                params=query_params(query,
-                                    cur_page * page_stepping,
-                                    page_stepping)
-            )
-            if page_response is not None and page_response.status_code != 429:
-                responses.extend(page_response.json())
+        if res is not None and res.status != 429:
+            return await res.json()
 
-            if  not page_response.json():
-                break
+        return {}
 
-            cur_page += 1
+    tasks = []
 
-    else:
-        n_pages = (max_posts // page_stepping) + 1 # one more for the surplus
-        for page in range(n_pages):
-            page_response = get_func(
-                endpoint,
-                params=query_params(query,
-                                    page * page_stepping,
-                                    page_stepping)
-            )
+    if max_posts is None:
+        max_posts = page_stepping
 
-            # by this point, one would expect this to be a list of posts
-            if page_response is not None and page_response.status_code != 429:
-                responses.extend(page_response.json())
-
-    return responses
-
-
-def async_get_posts_responses(*,
-                              endpoint: "UrlLike",
-                              query: Optional[str]=None,
-                              max_posts: Optional[int]=None,
-                              page_stepping: int,
-                              batch_send_size: Optional[int]=None,
-                              kemo_session: Optional["KemoSession"]=None) -> list["Response"]:
-    """
-    Gets the asynchronous responses of posts by page.
-
-    :param endpoint: The endpoint that the request will map to.
-    :param query: A search query string to filter the results.
-    :param max_posts: The max posts to fit into the final list.
-    :param page_stepping: The stepping of the paging.
-    :param batch_send_size: The size by which to send asynchrnous requests at the same time per batch.
-    :param kemo_session: The session to make the requests with.
-
-    :type endpoint: :type:`.UrlLike`
-    :type query: Optional[:class:`str`]
-    :type max_posts: Optional[:class:`int`]
-    :type page_stepping: :class:`int`
-    :type batch_send_size: Optional[:class:`int`]
-    :type kemo_session: Optional[:class:`.KemoSession`]
-
-    :return: A list of :class:`requests.Response`, to be further processed.
-    :rtype: list[`Response <https://requests.readthedocs.io/en/latest/api/#requests.Response>`_]
-    """
-
-    responses = []
-    exit_flag = False
-    send_size = (DEFAULT_BATCH_SEND_SIZE if batch_send_size is not None else batch_send_size)
-    aget = (async_get if kemo_session is None else kemo_session.aget)
-
-    if max_posts is None: # Try to get ALL the posts
-        cur_page = 0
-        while not exit_flag:
-            req_batch = []
-            for _ in range(ASYNC_FETCH_BATCH):
-                page_async_req = aget(
-                    endpoint,
-                    params=query_params(query,
-                                        cur_page * page_stepping,
-                                        page_stepping)
-                )
-                req_batch.append(page_async_req)
-                cur_page += 1
-
-            res_batch = async_map(req_batch, size=send_size)
-
-            for page_response in res_batch:
-                if page_response is not None and page_response.status_code != 429:
-                    responses.extend(page_response.json())
-                    if not page_response.json():
-                        exit_flag = True
-
-    else:
-        n_pages = (max_posts // page_stepping) + 1 # one more for the surplus
-        req_batch = (aget(
+    n_pages = (max_posts // page_stepping) + 1 # one more for the surplus
+    for page in range(n_pages):
+        page_coroutine = kemo_session.get(
             endpoint,
             params=query_params(query,
                                 page * page_stepping,
-                                page_stepping))
-                    for page in range(n_pages))
-        res_batch = async_map(req_batch, size=send_size)
+                                page_stepping)
+        )
 
-        for res in res_batch:
-            if (res is not None) and res.status_code != 429:
-                responses.extend(res.json())
+        tasks.append(unpack_json(page_coroutine))
 
-    return responses
+    bodies = []
+
+    # asyncio.gather() makes sure the order of the pages in the list is the same, even though
+    # you have to wait for all of them to finish first
+    async for body in gather(*tasks):
+        # extend() is used instead of append() because each response is a list of bodies itself
+        if body:
+            bodies.extend(body)
+
+    return bodies

@@ -2,15 +2,16 @@
 Discord channels module.
 """
 
+from asyncio import gather
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional, TypeAlias
 
 from .._aux import (
     MILI_DATE_FMT,
-    async_get_posts_responses,
+    add_session_to_message,
     before_date,
-    get_posts_responses,
+    get_posts_responses_bodies,
     since_date,
 )
 from ..core import UrlType
@@ -49,7 +50,7 @@ class DiscordChannel:
 
 
     @classmethod
-    def from_dict(cls, **fields) -> "DiscordChannel":
+    async def from_dict(cls, **fields) -> "DiscordChannel":
         """
         Initializes a DiscordChannel instance from a response fields.
 
@@ -105,12 +106,11 @@ class DiscordChannel:
         return self
 
 
-    def messages(self,
+    async def messages(self,
                  *,
                  max_msg: Optional[int]=None,
                  before: Optional[datetime]=None,
-                 since: Optional[datetime]=None,
-                 asynchronous: bool=False) -> MessagesList:
+                 since: Optional[datetime]=None) -> MessagesList:
         """
         Retrieve the messages of this channel.
 
@@ -118,31 +118,29 @@ class DiscordChannel:
                         of posts to enter the lists.
         :param before: Include only posts before this date.
         :param since: Include only posts after and including this date.
-        :param asynchronous: Wether to use asynchronous requests to maybe boost performance.
-                             It's really only recommended with queries of no more than 350 posts.
-                             Too many queries overwhelms the server and it actually slows the
-                             request down.
 
         :type max_msg: Optional[:class:`int`]
         :type before: Optional[:class:`datetime.datetime`]
         :type since: Optional[:class:`datetime.datetime`]
-        :type asynchronous: :class:`bool`
 
-        :return: A list of the messages of the channel that fit the filters.
+        :return: A list of the messages of the channel that fit the filters. Might be empty if there is no session assigned.
         :rtype: list[:class:`.DiscordMessage`]
         """
 
         if max_msg is not None and max_msg <= 0:
             raise ValueError(f"max_msg must be an integer greater than zero, not '{max_msg}'")
 
-        posts_req = (async_get_posts_responses if asynchronous else get_posts_responses)
-        response_bodies = posts_req(endpoint=f"/discord/channel/{self.id}",
-                                    max_posts=max_msg,
-                                    page_stepping=OFFSET_STEPPING,
-                                    kemo_session=self.__kemo_session)
-        msgs_list = []
+        if self.__kemo_session is None:
+            return []
 
-        for msg_fields in response_bodies:
+        msgs_tasks = []
+
+        async for msg_fields in get_posts_responses_bodies(
+            endpoint=f"/discord/channel/{self.id}",
+            max_posts=max_msg,
+            page_stepping=OFFSET_STEPPING,
+            kemo_session=self.__kemo_session
+        ):
             published_str = msg_fields["published"]
             if ((before is not None and not before_date(published_str, before,
                                                         fmt1=MILI_DATE_FMT, fmt2=MILI_DATE_FMT)) or
@@ -151,8 +149,6 @@ class DiscordChannel:
                 continue
 
             msg_fields.update(parent_channel=self)
-            post = DiscordMessage.from_dict(**msg_fields).set_underlying_session(self.__kemo_session)
+            msgs_tasks.append(add_session_to_message(DiscordMessage.from_dict(**msg_fields)), self.__kemo_session)
 
-            msgs_list.append(post)
-
-        return msgs_list
+        return await gather(*msgs_tasks)

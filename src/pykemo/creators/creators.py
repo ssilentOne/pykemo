@@ -2,27 +2,27 @@
 Creators module.
 """
 
+from asyncio import gather
+from collections.abc import Coroutine
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import TYPE_CHECKING, Literal, Optional, TypeAlias, Union
+from typing import TYPE_CHECKING, Any, Literal, Optional, TypeAlias, Union
 
 from .._aux import (
     MILI_DATE_FMT,
-    async_get_posts_responses,
+    add_session_to_post,
     before_date,
-    get_posts_responses,
+    get_posts_responses_bodies,
     since_date,
 )
 from ..announcements import Announcement
-from ..core import UrlType, get
+from ..core import UrlType
 from ..discord import ChannelsList, DiscordChannel
 from ..fanbox import Fancard
 from ..posts import ELEMENTS_PER_PAGE, Post, PostsList
 from ..services import ServiceType
 
 if TYPE_CHECKING:
-    from requests import Response
-
     from ..core import UrlLike
     from ..services import ServiceLike
     from ..sessions import KemoSession
@@ -83,7 +83,7 @@ class Creator:
 
 
     @classmethod
-    def from_dict(cls, **fields: CreatorDict) -> "Creator":
+    async def from_dict(cls, **fields: CreatorDict) -> "Creator":
         """
         Initializes a creator from a dictionary containing its properties.
 
@@ -104,36 +104,34 @@ class Creator:
 
 
     @classmethod
-    def from_profile(cls,
-                     service: "ServiceLike",
-                     creator_id: str,
-                     kemo_session: Optional["KemoSession"]=None) -> Optional["Creator"]:
+    async def from_profile(cls,
+                           service: "ServiceLike",
+                           creator_id: str,
+                           kemo_session: "KemoSession") -> Optional["Creator"]:
         """
         Retrieves a creator using its profile info.
 
         :param service: The service of the creator.
         :param creator_id: The ID of the creator.
-        :param session: The Kemono Session to use for its creation., defaults to ``None``
+        :param session: The Kemono Session to use for its creation.
 
         :type service: :type:`.ServiceLike`
         :type creator_id: :class:`str`
-        :type session: :class:`.KemoSession`, optional
+        :type session: :class:`.KemoSession`
 
         :return: If the creator is found, retrieve and create a :class:`Creator` instance, otherwise return ``None``.
         :rtype: Optional[:class:`Creator`]
         """
 
-        get_func = (get if kemo_session is None else kemo_session.get)
-        creator_response = get_func(f"/{service}/user/{creator_id}/profile")
+        creator_response = await kemo_session.get(f"/{service}/user/{creator_id}/profile")
 
-        if creator_response.status_code == 404:
+        if creator_response.status == 404:
             return None
 
-        return Creator.from_dict(**creator_response.json()).set_underlying_session(kemo_session)
+        return (await Creator.from_dict(**(await creator_response.json()))).set_underlying_session(kemo_session)
 
 
-    @property
-    def announcements(self) -> AnnouncementsList:
+    async def announcements(self) -> AnnouncementsList:
         """
         Gets a list of the creator's announcements, if any. Mainly relevant for
         Patreon service.
@@ -144,13 +142,12 @@ class Creator:
 
         if not self.__ann_loaded:
             self.__ann_loaded = True
-            self._announcements = self._fetch_announcements()
+            self._announcements = await self._fetch_announcements()
 
         return self._announcements
 
 
-    @property
-    def fancards(self) -> FancardsList:
+    async def fancards(self) -> FancardsList:
         """
         Gets a list of the fancards associated with this creator.
 
@@ -162,13 +159,12 @@ class Creator:
 
         if not self.__fanc_loaded:
             self.__fanc_loaded = True
-            self._fancards = self._fetch_fancards()
+            self._fancards = await self._fetch_fancards()
 
         return self._fancards
 
 
-    @property
-    def channels(self) -> ChannelsList:
+    async def channels(self) -> ChannelsList:
         """
         Gets all the Discord channels associated with this creator.
         This is because the ID of a Discord 'creator', is really the ID of a Discord server/guild.
@@ -181,7 +177,7 @@ class Creator:
 
         if not self.__chan_loaded:
             self.__chan_loaded = True
-            self._channels = self.fetch_channels()
+            self._channels = await self.fetch_channels()
 
         return self._channels
 
@@ -196,26 +192,29 @@ class Creator:
         return f"{UrlType.SITE}/{self.service}/user/{self.id}"
 
 
-    def other_links(self) -> list["Creator"]:
+    async def other_links(self) -> list["Creator"]:
         """
         Searches for other accounts of this creator.
 
-        :returns: Other instances of :class:`.Creator` associated to this one, if any.
+        :returns: Other instances of :class:`.Creator` associated to this one, if any. Might also
+                  be an empty list if there is no session assigned.
         :rtype: list[:class:`.Creator`]
         """
 
-        _get = (get if self.__kemo_session is None else self.__kemo_session.get)
-        link_response = _get(f"/{self.service}/user/{self.id}/links")
-        links = []
+        if self.__kemo_session is None:
+            return []
 
-        for link_fields in link_response.json():
-            creator = Creator.from_profile(link_fields.get("service"),
-                                           link_fields.get("id"),
-                                           self.__kemo_session)
-            if creator is not None:
-                links.append(creator)
+        link_response = await self.__kemo_session.get(f"/{self.service}/user/{self.id}/links")
+        links_tasks = []
 
-        return links
+        async for link_fields in link_response.json():
+            links_tasks.append(
+                Creator.from_profile(link_fields.get("service"),
+                                     link_fields.get("id"),
+                                     self.__kemo_session)
+            )
+
+        return [lnk for lnk in await gather(*links_tasks) if lnk is not None]
 
 
     def set_underlying_session(self, ks: "KemoSession") -> "Creator":
@@ -234,13 +233,12 @@ class Creator:
         return self
 
 
-    def posts(self,
+    async def posts(self,
               *,
               query: Optional[str]=None,
               max_posts: Optional[int]=ELEMENTS_PER_PAGE,
               before: Optional[datetime]=None,
-              since: Optional[datetime]=None,
-              asynchronous: bool=False) -> PostsList:
+              since: Optional[datetime]=None) -> PostsList:
         """
         Retrieves posts under this creator. If the creator is from Discord, it won't retrieve any,
         as that service doesn't use 'posts'.
@@ -249,46 +247,46 @@ class Creator:
         :param max_posts: The max number of posts to look through. This is NOT necessarily the number of posts to enter the lists. If `None`, it will try to retrieve ALL the posts.
         :param before: Include only posts before this date.
         :param since: Include only posts after and including this date.
-        :param asynchronous: Wether to use asynchronous requests to maybe boost performance. It's really only recommended with queries of no more than 350 posts. Too many queries overwhelms the server and it actually slows the request down.
 
         :type query: Optional[:class:`str`]
         :type max_posts: Optional[:class:`int`]
         :type before: Optional[:class:`datetime.datetime`]
         :type since: Optional[:class:`datetime.datetime`]
-        :type asynchronous: :class:`bool`
 
         :raises ValueError: If ``max_posts`` is negative or zero.
 
-        :return: A list of posts that fit the filters.
+        :return: A list of posts that fit the filters. Might be empty if there is no session assigned.
         :rtype: list[:class:`.Post`]
         """
 
         if max_posts is not None and max_posts <= 0:
             raise ValueError(f"max_posts must be an integer greater than zero, not '{max_posts}'")
 
-        posts_req = (async_get_posts_responses if asynchronous else get_posts_responses)
-        response_bodies = posts_req(endpoint=f"/{self.service}/user/{self.id}",
-                                    query=query,
-                                    max_posts=max_posts,
-                                    page_stepping=ELEMENTS_PER_PAGE,
-                                    kemo_session=self.__kemo_session)
-        posts_list = []
+        if self.__kemo_session is None:
+            return []
 
-        for post_fields in response_bodies:
+        posts_tasks = []
+
+        async for post_fields in get_posts_responses_bodies(
+            endpoint=f"/{self.service}/user/{self.id}",
+            query=query,
+            max_posts=max_posts,
+            page_stepping=ELEMENTS_PER_PAGE,
+            kemo_session=self.__kemo_session
+        ):
             published_str = post_fields["published"]
             if ((before is not None and not before_date(published_str, before)) or
                 (since is not None and not since_date(published_str, since))):
                 continue
 
             post_fields.update(creator=self)
-            post = Post.from_dict(**post_fields).set_underlying_session(self.__kemo_session)
+            posts_tasks.append(add_session_to_post(Post.from_dict(**post_fields),
+                                                   self.__kemo_session))
 
-            posts_list.append(post)
-
-        return posts_list
+        return await gather(*posts_tasks)
 
 
-    def get_post(self, post_id: str) -> Optional[Post]:
+    async def get_post(self, post_id: str) -> Optional[Post]:
         """
         Get a specific post by its ID.
 
@@ -300,94 +298,95 @@ class Creator:
         :rtype: Optional[`.Post`]
         """
 
-        _get = (get if self.__kemo_session is None else self.__kemo_session.get)
-        response = _get(f"/{self.service}/user/{self.id}/post/{post_id}")
-
-        if response.status_code == 404:
+        if self.__kemo_session is None:
             return None
 
-        return Post.from_dict(**response.json()).set_underlying_session(self.__kemo_session)
+        response = await self.__kemo_session.get(f"/{self.service}/user/{self.id}/post/{post_id}")
+
+        if response.status == 404:
+            return None
+
+        return await add_session_to_post(Post.from_dict(**(await response.json())),
+                                         self.__kemo_session)
 
 
-    def _fetch_announcements(self) -> AnnouncementsList:
+    async def _fetch_announcements(self) -> AnnouncementsList:
         """
         .. warning:: `(for internal purposes)`
         Fetches a request with the creator's announcements. This means that, unlike
-        :attr:`.announcements`, this reloads the announcements again.
+        :meth:`.announcements()`, this reloads the announcements again.
 
-        :return: A list of announcements.
+        :return: A list of announcements. Might be empty if there is no session assigned.
         :rtype: list[:class:`.Announcement`]
         """
 
-        _get = (get if self.__kemo_session is None else self.__kemo_session.get)
-        response = _get(f"/{self.service}/user/{self.id}/announcements")
-        announcements = []
+        if self.__kemo_session is None:
+            return []
 
-        for ann_fields in response.json():
+        response = await self.__kemo_session.get(f"/{self.service}/user/{self.id}/announcements")
+        announcements_tasks = []
+
+        async for ann_fields in response.json():
             ann_fields.update(creator=self)
-            announcements.append(Announcement.from_dict(**ann_fields))
+            announcements_tasks.append(Announcement.from_dict(**ann_fields))
 
-        return announcements
+        return await gather(*announcements_tasks)
 
 
-    def _fetch_fancards(self) -> FancardsList:
+    async def _fetch_fancards(self) -> FancardsList:
         """
         .. warning:: `(for internal purposes)`
-        Fetches a request with the creator's fancards. Unlike :attr:`.fancards`,
+        Fetches a request with the creator's fancards. Unlike :meth:`.fancards()`,
         this reloads the fancards again.
         .. note:: If the service is not Fanbox, it will return an empty list instead.
 
-        :return: A list of fancards.
+        :return: A list of fancards. Might also be empty if there is not session assigned.
         :rtype: list[:class:`.Fancard`]
         """
 
         fancards = []
 
-        if self.service == ServiceType.FANBOX:
-            _get = (get if self.__kemo_session is None else self.__kemo_session.get)
-            response = _get(f"/{self.service}/user/{self.id}/fancards")
+        if self.__kemo_session is not None and self.service == ServiceType.FANBOX:
+            response = await self.__kemo_session.get(f"/{self.service}/user/{self.id}/fancards")
+            fancards_tasks = []
 
-            for fancard_fields in response.json():
+            async for fancard_fields in response.json():
                 fancard_fields.update(creator=self)
-                fancards.append(Fancard.from_dict(**fancard_fields))
+                fancards_tasks.append(Fancard.from_dict(**fancard_fields))
+
+            fancards.extend(await gather(*fancards_tasks))
 
         return fancards
 
 
-    def _get_channels_response(self) -> "Response":
-        """
-        .. warning:: `(for internal purposes)`
-        Gets the channels request.
-
-        :return: The response of the channels' lookup.
-        :rtype: `Response <https://requests.readthedocs.io/en/latest/api/#requests.Response>`_
-        """
-
-        _get = (get if self.__kemo_session is None else self.__kemo_session.get)
-        return _get(f"/discord/channel/lookup/{self.id}")
-
-
-    def fetch_channels(self) -> ChannelsList:
+    async def fetch_channels(self) -> ChannelsList:
         """
         Fetches a request for Discord channels, if available. 
 
-        :return: A list of channels.
+        :return: A list of channels. Might also be empty if there is no session assigned.
         :rtype: list[:class:`.DiscordChannel`]
         """
 
         channels = []
 
-        if self.service == ServiceType.DISCORD:
+        if self.__kemo_session is not None and self.service == ServiceType.DISCORD:
+            response = await self.__kemo_session.get(f"/discord/channel/lookup/{self.id}")
+            channels_tasks = []
 
-            for chan_fields in self._get_channels_response().json():
+            async def add_session_to_channel(
+                    chan_task: Coroutine[Any, Any, DiscordChannel]) -> DiscordChannel:
+                return (await chan_task).set_underlying_session(self.__kemo_session)
+
+            async for chan_fields in response.json():
                 chan_fields.update(creator=self)
-                channels.append(DiscordChannel.from_dict(**chan_fields).set_underlying_session(self.__kemo_session))
+                channels_tasks.append(add_session_to_channel(DiscordChannel.from_dict(**chan_fields)))
 
+            channels.extend(await gather(*channels_tasks))
 
         return channels
 
 
-    def get_channel(self, channel_id: str) -> Optional[DiscordChannel]:
+    async def get_channel(self, channel_id: str) -> Optional[DiscordChannel]:
         """
         Fetches a specific channel of this creator by id.
 
@@ -399,9 +398,11 @@ class Creator:
         :rtype: Optional[:class:`.DiscordChannel`]
         """
 
-        for chan_fields in self._get_channels_response().json():
+        response = await self.__kemo_session.get(f"/discord/channel/lookup/{self.id}")
+
+        async for chan_fields in response.json():
             if chan_fields.get("id") == channel_id:
                 chan_fields.update(creator=self)
-                return DiscordChannel.from_dict(**chan_fields).set_underlying_session(self.__kemo_session)
+                return (await DiscordChannel.from_dict(**chan_fields)).set_underlying_session(self.__kemo_session)
 
         return None

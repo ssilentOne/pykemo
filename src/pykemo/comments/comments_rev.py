@@ -31,7 +31,7 @@ class CommentRevision:
 
 
     @classmethod
-    def from_dict(cls, **fields) -> "CommentRevision":
+    async def from_dict(cls, **fields) -> "CommentRevision":
         """
         Initializes a CommentRevision instance from a response fields.
 

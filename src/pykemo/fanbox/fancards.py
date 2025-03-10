@@ -66,7 +66,7 @@ class Fancard:
 
 
     @classmethod
-    def from_dict(cls, **fields) -> "Fancard":
+    async def from_dict(cls, **fields) -> "Fancard":
         """
         Initializes a Fancard instance from a response fields.
 

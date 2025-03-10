@@ -19,7 +19,7 @@ ANN_DATE_FMT: str = r"%Y-%m-%dT%H:%M:%S.%f"
 class Announcement:
     """
     Announcement tied to a creator. Mainly used in users with Patreon service.
-    Instances of this class are usually created through :attr:`.Creator.announcements`.
+    Instances of this class are usually created through :meth:`.Creator.announcements()`.
 
     :param service: The service of the creator that made this announcement. Tipically Patreon.
     :param creator_id: The id of this announcement's creator.
@@ -45,7 +45,7 @@ class Announcement:
 
 
     @classmethod
-    def from_dict(cls, **fields) -> "Announcement":
+    async def from_dict(cls, **fields) -> "Announcement":
         """
         Initializes an Announcement instance from a response fields.
 

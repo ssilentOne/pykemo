@@ -27,7 +27,7 @@ class PostRevision:
 
 
     @classmethod
-    def from_dict(cls, **fields) -> "PostRevision":
+    async def from_dict(cls, **fields) -> "PostRevision":
         """
         Initializes a PostRevision instance from a response fields.
 

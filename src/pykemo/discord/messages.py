@@ -2,6 +2,7 @@
 Discord messages module.
 """
 
+from asyncio import gather
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional, TypeAlias
@@ -65,7 +66,7 @@ class DiscordMessage:
 
 
     @classmethod
-    def from_dict(cls, **fields) -> "DiscordMessage":
+    async def from_dict(cls, **fields) -> "DiscordMessage":
         """
         Initializes a DiscordMessage instance from a response fields.
 
@@ -79,7 +80,7 @@ class DiscordMessage:
 
         return cls(
             id=fields.get("id"),
-            author=(DiscordUser.from_dict(**author_fields) if author_fields is not None else None),
+            author=(await DiscordUser.from_dict(**author_fields) if author_fields is not None else None),
             server_id=fields.get("server"),
             channel=fields.get("parent_channel"),
             content=fields.get("content", ""),
@@ -89,8 +90,8 @@ class DiscordMessage:
                     if edited_date is not None else None),
             embeds=fields.get("embeds", []),
             mentions=fields.get("mentions", []),
-            attachments=[File.from_dict(**sanitize_data_url(attachment_fields))
-                         for attachment_fields in fields.get("attachments")]
+            attachments=await gather(*[File.from_dict(**sanitize_data_url(attachment_fields))
+                                     for attachment_fields in fields.get("attachments")])
         )
 
 

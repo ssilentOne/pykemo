@@ -118,38 +118,36 @@ class Post:
         :rtype: :class:`.Post`
         """
 
-        post_fields = fields["post"]
-
-        added_field = post_fields.get("added", None)
+        added_field = fields.get("added", None)
         added = (datetime.strptime(added_field, MILI_DATE_FMT)
                  if added_field is not None
                  else None)
         
-        edited_field = post_fields.get("edited", None)
+        edited_field = fields.get("edited", None)
         edited = (datetime.strptime(edited_field, DEFAULT_DATE_FMT)
                  if edited_field is not None
                  else None)
         
-        file_dict = post_fields.get("file")
-        attachments = post_fields.get("attachments")
+        file_dict = fields.get("file")
+        attachments = fields.get("attachments")
 
         return cls(
-            id=post_fields.get("id"),
-            creator_id=post_fields.get("user"),
-            service=ServiceType(post_fields.get("service")),
-            title=post_fields.get("title").strip(),
-            content=post_fields.get("content", ""),
-            substring=post_fields.get("substring", ""),
-            embed=post_fields.get("embed", {}),
-            shared_file=post_fields.get("shared_file", False),
+            id=fields.get("id"),
+            creator_id=fields.get("user"),
+            service=ServiceType(fields.get("service")),
+            title=fields.get("title").strip(),
+            content=fields.get("content", ""),
+            substring=fields.get("substring", ""),
+            embed=fields.get("embed", {}),
+            shared_file=fields.get("shared_file", False),
             added=added,
-            published=datetime.strptime(post_fields.get("published"), DEFAULT_DATE_FMT),
+            published=datetime.strptime(fields.get("published"), DEFAULT_DATE_FMT),
             edited=edited,
             file=(await File.from_dict(**sanitize_data_url(file_dict)) if file_dict else None),
             attachments=await gather(*[File.from_dict(**sanitize_data_url(attachment_fields))
                          for attachment_fields in attachments]),
-            creator=post_fields.get("creator", None),
-            is_revision=post_fields.get("is_revision", False)
+            creator=fields.get("creator", None),
+            is_revision=fields.get("is_revision", False)
         )
 
 
@@ -282,7 +280,7 @@ class Post:
         :param force: Wether to overwrite existing files, defaults to ``True``
         :param verbose: Wether to track progress, defaults to ``True``
         :param pos: The position order of the progress bar, defaults to 0
-        :param verbose_children: Wether to track progress for files, defaults to value of ``verbose``.
+        :param verbose_children: Wether to track progress for files, defaults to value of ``verbose``
 
         :type path: :class:`PathLike` | :class:`Path` | ``None``
         :type force: :class:`bool`, optional

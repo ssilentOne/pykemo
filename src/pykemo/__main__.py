@@ -2,9 +2,10 @@
 pykemo entrypoint.
 """
 
+from asyncio import run
 from sys import argv
 
 from .main import main
 
 if __name__ == "__main__":
-    main(*argv)
+    run(main(*argv))

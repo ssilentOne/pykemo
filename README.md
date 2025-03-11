@@ -31,8 +31,8 @@ using custom classes like `Creator` or `Post`.
 
 * **OS Independent.** Being pure-python, the library works on Windows, MacOS and Linux alike.
 
-* **Asynchronous request for performance boosts.** Though it's recommended to use along a session
-cookie, to get around the server's DDOS issues.
+* **Asynchronous request for performance boosts.** With the use of async programming, the requests
+are all made _concurrently_.
 
 * **Ready to install.** Rather than installing from source, the [releases](https://github.com/ssilentOne/pykemo/releases)
 have each its own wheels to distribute at your leisure.
@@ -40,9 +40,15 @@ have each its own wheels to distribute at your leisure.
 <hr style="height:1px; width:35%" />
 
 * [Examples](#examples)
+    - [_Retrieving a Creator_](#retrieving-a-creator)
+    - [_Fetching Posts_](#fetching-posts)
+    - [_Downloading Files_](#downloading-files)
+    - [_Loggin into an Account_](#login-into-an-account)
 * [Dependencies](#dependencies)
 * [Documentation](#documentation)
 * [How to Install](#how-to-install)
+    - [Using Wheels](#using-wheels)
+    - [From Source](#from-source)
 
 <hr style="height:1px; width:35%" />
 

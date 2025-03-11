@@ -38,3 +38,11 @@ Sessions
 
 .. autoexception:: pykemo.exceptions.sessions.AlreadyLoggedIn
     :members:
+
+
+.. autoexception:: pykemo.exceptions.sessions.RegisterError
+    :members:
+
+
+.. autoexception:: pykemo.exceptions.sessions.InvalidRegister
+    :members:

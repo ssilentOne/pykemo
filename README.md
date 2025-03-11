@@ -152,7 +152,7 @@ You may visit the latest [release](https://github.com/ssilentOne/pykemo/releases
 download the wheel (`*.whl`) file. <br/>
 Then, you can install it with `pip` like any other package:
 ```console
-$ pip install pykemo-0.6.0-py3-none-any.whl
+$ pip install pykemo-0.6.1-py3-none-any.whl
 ```
 
 ## From source

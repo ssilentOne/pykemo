@@ -15,3 +15,10 @@ class InvalidLogin(LoginError):
 
 class AlreadyLoggedIn(LoginError):
     "The user is already logged in."
+
+
+class RegisterError(PyKemoException):
+    "Generic register error in connection."
+
+class InvalidRegister(RegisterError):
+    "Register failed due to user errors."

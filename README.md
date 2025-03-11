@@ -125,6 +125,26 @@ await chosen_one.save("/download/*", verbose=True)
 ```
 > ***Note:** Use `verbose=True` to see the fancy progress bars.*
 
+### Login into an Account
+
+Pykemo supports an interface that allows you to login into your account. It automatically uses
+a dedicated session inside to persist your session key:
+```py
+import asyncio
+import os
+from pykemo.general import login
+
+async def main():
+    async with await login(os.environ["username"],
+                           os.environ["password"]) as acc:
+        creator = await acc.get_creator("fanbox", "2658856")
+        post = await creator.get_post("9441683")
+
+        await post.save("./path/to/download/*")
+
+asyncio.run(main())
+```
+
 <hr style="height:3px; width:50%" />
 
 # Dependencies

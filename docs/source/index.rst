@@ -130,6 +130,32 @@ Pykemo is a Python library that effectively functions as a binding to the
 
         .. note:: Use ``verbose=True`` to see the fancy progress bars.
 
+    .. dropdown:: Ussing Accounts
+
+        Pykemo supports an interface that allows you to login into your account. It automatically uses
+        a dedicated session inside to persist your session key.
+
+        .. tab-set::
+
+            .. tab-item:: Consumer
+
+                A normal user's account.
+
+                .. code-block:: python
+
+                    import asyncio
+                    import os
+                    from pykemo.general import login
+
+                    async def main():
+                        async with await login(os.environ["username"], os.environ["password"]) as acc:
+                            creator = await acc.get_creator("fanbox", "2658856")
+                            post = await creator.get_post("9441683")
+
+                            await post.save("./path/to/download/*")
+
+                    asyncio.run(main())
+
 .. toctree::
     :caption: Table of Contents
     :maxdepth: 2

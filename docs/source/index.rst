@@ -16,24 +16,34 @@ Pykemo is a Python library that effectively functions as a binding to the
 
                 .. code-block:: python
 
-                    from pykemo import get_creator, ServiceType
+                    import asyncio
+                    from pykemo import KemoSession, get_creator, ServiceType
 
-                    creator_id = "2658856"
+                    async def main():
+                        async with KemoSession() as s:
+                            creator_id = "2658856"
 
-                    creator = get_creator(ServiceType.FANBOX, creator_id)
-                    print(creator)
+                            creator = get_creator(ServiceType.FANBOX, creator_id, s)
+                            print(creator)
+
+                    asyncio.run(main())
 
 
             .. tab-item:: String literal
 
                 .. code-block:: python
 
-                    from pykemo import get_creator
+                    import asyncio
+                    from pykemo import KemoSession, get_creator
 
-                    creator_id = "2658856"
+                    async def main():
+                        async with KemoSession() as s:
+                            creator_id = "2658856"
 
-                    creator = get_creator("fanbox", creator_id)
-                    print(creator)
+                            creator = get_creator("fanbox", creator_id, s)
+                            print(creator)
+
+                    asyncio.run(main())
 
         And it will print:
 
@@ -53,7 +63,7 @@ Pykemo is a Python library that effectively functions as a binding to the
                 .. code-block:: python
 
                     # Fetching last 5 posts
-                    last_posts = creator.posts(max_posts=5)
+                    last_posts = await creator.posts(max_posts=5)
 
                     for post in last_posts:
                         print(post)
@@ -65,10 +75,10 @@ Pykemo is a Python library that effectively functions as a binding to the
 
                     from datetime import datetime
 
-                    # Every post from June 15th to July 23rd
-                    before = datetime(year=2024, month=7, day=23)
-                    since = datetime(year=2024, month=6, day=15)
-                    specific_posts = creator.posts(before=before, since=since)
+                    # Every post from March 1st to 4rd
+                    before = datetime(year=2025, month=3, day=4)
+                    since = datetime(year=2025, month=3, day=1)
+                    specific_posts = await creator.posts(before=before, since=since)
 
                     for post in specific_posts:
                         print(post)
@@ -77,10 +87,10 @@ Pykemo is a Python library that effectively functions as a binding to the
 
         .. code-block::
 
-            Post(id='8104634', creator_id='2658856', service='fanbox', title='獅●ぼ●ん（気高いメスライオンが枕●業Vtuber）')
-            Post(id='8101402', creator_id='2658856', service='fanbox', title='大●ス●ル（おっπ見せてほしいとお願いしたらVtuber線画）')
-            Post(id='8100642', creator_id='2658856', service='fanbox', title='【閲覧注意】湊●く●（目の前で寝取られるVtuber線画）')
-            Post(id='8100373', creator_id='2658856', service='fanbox', title='湊●く●（お料理中に襲われてVtuber線画）')
+            Post(id='9484523', creator_id='2658856', service=<ServiceType.FANBOX: 'fanbox'>, title='白●ノ●ル（リクエストNTR）（と●の●ら撮影会修正）')
+            Post(id='9482064', creator_id='2658856', service=<ServiceType.FANBOX: 'fanbox'>, title='と●の●ら（そ●友さん達と撮影会Vtuber）')
+            Post(id='9481266', creator_id='2658856', service=<ServiceType.FANBOX: 'fanbox'>, title='ボテ注意常●ト●Vtuber')
+            Post(id='9479140', creator_id='2658856', service=<ServiceType.FANBOX: 'fanbox'>, title='白●フ●キ（●やんけ①②）')
             ...
 
 
@@ -91,7 +101,8 @@ Pykemo is a Python library that effectively functions as a binding to the
 
             from pykemo import get_posts()
 
-            any_posts = get_posts(max_posts=15)
+            async with KemoSession() as s:
+                any_posts = await get_posts(max_posts=15, kemo_session=s)
 
 
     .. dropdown:: Downloading files
@@ -107,7 +118,7 @@ Pykemo is a Python library that effectively functions as a binding to the
                     chosen_one = specific_posts[0]
 
                     for file in chosen_one.attachments:
-                        file.save("./download/", verbose=False)
+                        await file.save("./download/", verbose=False)
 
             .. tab-item:: From Post
 
@@ -115,7 +126,7 @@ Pykemo is a Python library that effectively functions as a binding to the
 
                     chosen_one = specific_posts[0]
 
-                    chosen_one.save("/download/*", verbose=True)
+                    await chosen_one.save("/download/*", verbose=True)
 
         .. note:: Use ``verbose=True`` to see the fancy progress bars.
 
@@ -124,9 +135,11 @@ Pykemo is a Python library that effectively functions as a binding to the
     :maxdepth: 2
 
     Creators <pykemo/creators/creators.rst>
+    Accounts <pykemo/accounts/account.rst>
     Discord Types <pykemo/discord/discord.rst>
     Enums <pykemo/enums/enums.rst>
     Exceptions <pykemo/exceptions/exceptions.rst>
     Files <pykemo/files/files.rst>
     Helper Types <pykemo/general/general.rst>
-    Posts <pykemo/posts/posts>
+    Posts <pykemo/posts/posts.rst>
+    Sessions <pykemo/sessions/sessions.rst>

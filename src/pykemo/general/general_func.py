@@ -13,7 +13,7 @@ from .._aux import (
     get_posts_responses_bodies,
     since_date,
 )
-from ..account import Account
+from ..accounts import Account
 from ..creators import Creator, CreatorsList
 from ..discord import DiscordMessage
 from ..files import File
@@ -214,9 +214,9 @@ async def get_api_version(kemo_session: "KemoSession") -> str:
     """
     Convenience function to get the last hash of the current API version.
 
-    :param session: The Kemono Session to use.
+    :param kemo_session: The Kemono Session to use.
 
-    :type session: :class:`.KemoSession`
+    :type kemo_session: :class:`.KemoSession`
 
     :return: The last commit hash of the API.
     :rtype: :class:`str`

@@ -1,7 +1,7 @@
 Posts Reference
 ===============
 
-Post
+Posts
 -----
 
 .. autoclass:: pykemo.posts.posts.Post
@@ -14,8 +14,8 @@ Post
     :exclude-members: from_dict
 
 
-Comment
--------
+Comments
+--------
 
 .. autoclass:: pykemo.comments.comments.Comment
     :members:

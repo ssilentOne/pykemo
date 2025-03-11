@@ -34,3 +34,17 @@ When dealing with the URLs of types.
     .. autoattribute:: DATA
     .. autoattribute:: API
     .. autoattribute:: DISCORD
+
+
+Account Roles
+-------------
+
+The clearance rank a specific account has.
+
+.. autoclass:: pykemo.accounts.role.AccountRole
+    :members:
+    :show-inheritance:
+
+    .. autoattribute:: CONSUMER
+    .. autoattribute:: MODERATOR
+    .. autoattribute:: ADMINISTRATOR

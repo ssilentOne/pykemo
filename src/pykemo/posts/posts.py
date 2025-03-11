@@ -272,10 +272,9 @@ class Post:
                    pos: int=0,
                    verbose_children: Optional[bool]=None) -> bool:
         """
-        Tries to save all the files in the post. Even if one file fails, it still tries to download
-        the rest.
+        Tries to save all the files in the post. Even if one file fails, it still tries to download the rest.
 
-        :param path: The optional path where to store all the files. If it ends with '/*', it
+        :param path: The optional path where to store all the files. If it ends with ``'/*'``, it
                      will use its default name inside such folder.
         :param force: Wether to overwrite existing files, defaults to ``True``
         :param verbose: Wether to track progress, defaults to ``True``

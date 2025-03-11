@@ -9,6 +9,7 @@ General
 .. autoexception:: pykemo.exceptions.general.PyKemoException
     :members:
 
+
 Services
 --------
 
@@ -21,4 +22,19 @@ Services
 
 
 .. autoexception:: pykemo.exceptions.services.NotDiscord
+    :members:
+
+
+Sessions
+--------
+
+.. autoexception:: pykemo.exceptions.sessions.LoginError
+    :members:
+
+
+.. autoexception:: pykemo.exceptions.sessions.InvalidLogin
+    :members:
+
+
+.. autoexception:: pykemo.exceptions.sessions.AlreadyLoggedIn
     :members:

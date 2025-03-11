@@ -166,6 +166,8 @@ All the docs for every version of pykemo are [here](https://pykemo.readthedocs.i
 
 # How to Install
 
+> Please note that you may still need to install the [dependencies](#dependencies) separately beforehand. Pykemo needs them to properly function.
+
 ## Using wheels
 
 You may visit the latest [release](https://github.com/ssilentOne/pykemo/releases/latest) and

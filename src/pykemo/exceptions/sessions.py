@@ -20,5 +20,6 @@ class AlreadyLoggedIn(LoginError):
 class RegisterError(PyKemoException):
     "Generic register error in connection."
 
+
 class InvalidRegister(RegisterError):
     "Register failed due to user errors."

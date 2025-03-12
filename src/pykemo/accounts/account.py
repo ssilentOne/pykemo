@@ -10,7 +10,14 @@ from typing import TYPE_CHECKING, Literal, Optional, TypeAlias, Union
 
 from .._aux import MILI_DATE_FMT, add_session_to_post
 from ..creators import Creator, CreatorsList
-from ..exceptions import AlreadyLoggedIn, InvalidLogin, InvalidRegister, LoginError, RegisterError
+from ..exceptions import (
+    AlreadyLoggedIn,
+    InvalidLogin,
+    InvalidRegister,
+    LoginError,
+    PyKemoException,
+    RegisterError,
+)
 from ..posts import Post, PostsList
 from ..sessions import KemoSession
 from .role import AccountRole
@@ -145,17 +152,16 @@ class Account:
         register_res = await session.post("/authentication/register",
                                           json=dict(username=user, password=password,
                                                     confirm_password=password, favorites_json=""))
-        res_body = await register_res.json()
 
         # invalid due to user errors
         if register_res.status == 400:
             session.close()
-            raise InvalidRegister(res_body.get("error", "The process was invalidated due to user error."))
+            raise InvalidRegister((await register_res.json()).get("error", "The process was invalidated due to user error."))
 
         # an unknown error
         elif register_res.status != 200:
             session.close()
-            raise RegisterError(res_body.get("error", "An unexpected error ocurred in the registering process."))
+            raise RegisterError((await register_res.json()).get("error", "An unexpected error ocurred in the registering process."))
 
         login_body = await (await session.post("/authentication/login", json=dict(username=user, password=password))).json()
 
@@ -175,6 +181,45 @@ class Account:
 
         await self.session.post("/authentication/logout")
         await self.session.close()
+
+
+    async def change_password(self,
+                              current_password: str,
+                              new_password: str,
+                              close_on_fail: bool=True) -> None:
+        """
+        Attempts to change the current password for this account.
+
+        .. warning:: `Be careful.` If this launches an exception and ``close_on_fail`` is set to
+                     ``False``, the internal session will not close. It's the responsability of
+                     the programmer at this point to close it if that happens.
+        
+        :param current_password: The password that is already set.
+        :param new_password: The new value to overwrite the current password with.
+        :param close_on_fail: Wether to close the internal session if this launches an exception, defaults to ``True``.
+        
+        :type current_password: :class:`str`
+        :type new_password: :class:`str`
+        :type close_on_fail: :class:`bool`, optional
+
+        :raises PyKemoException: If the change fails for whatever reason.
+        """
+
+        request_body = {
+            "current-password": current_password,
+            "new-password": new_password,
+            "new-password-confirmation": new_password
+        }
+        change_res = await self.session.post("/account/change_password",
+                                             json=request_body)
+
+        if change_res.status == 200:
+            return
+
+        if close_on_fail:
+            self.logout()
+
+        raise PyKemoException((await change_res.json()).get("error", "An unexpected error ocurred in the password change."))
 
 
     async def favorite_artists(self) -> CreatorsList:

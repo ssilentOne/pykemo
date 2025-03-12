@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Literal, Optional, TypeAlias, Union
 
 from .._aux import MILI_DATE_FMT, add_session_to_post
 from ..creators import Creator, CreatorsList
-from ..exceptions import AlreadyLoggedIn, InvalidLogin, LoginError
+from ..exceptions import AlreadyLoggedIn, InvalidLogin, InvalidRegister, LoginError, RegisterError
 from ..posts import Post, PostsList
 from ..sessions import KemoSession
 from .role import AccountRole
@@ -117,6 +117,53 @@ class Account:
             username=res_json.get("username"),
             created_at=datetime.strptime(res_json.get("created_at"), MILI_DATE_FMT),
             role=AccountRole(res_json.get("role")),
+            session=session
+        )
+
+
+    @classmethod
+    async def register(cls,
+                       user: str,
+                       password: str) -> "Account":
+        """
+        Tries to register a accountuser.
+        
+        :param user: The username to try to register with.
+        :param password: The password to try to register with.
+  
+        :type user: :class:`str`
+        :type password: :class:`str`
+
+        :raises InvalidRegister: Failed to register due to user errors.
+        :raises RegisterError: Another error ocurred.
+        
+        :return: The account of the user, if sucessfully logged in after registering.
+        :rtype: :class:`.Account`
+        """
+
+        session = KemoSession()
+        register_res = await session.post("/authentication/register",
+                                          json=dict(username=user, password=password,
+                                                    confirm_password=password, favorites_json=""))
+        res_body = await register_res.json()
+
+        # invalid due to user errors
+        if register_res.status == 400:
+            session.close()
+            raise InvalidRegister(res_body.get("error", "The process was invalidated due to user error."))
+
+        # an unknown error
+        elif register_res.status != 200:
+            session.close()
+            raise RegisterError(res_body.get("error", "An unexpected error ocurred in the registering process."))
+
+        login_body = await (await session.post("/authentication/login", json=dict(username=user, password=password))).json()
+
+        return cls(
+            id=login_body.get("id"),
+            username=login_body.get("username"),
+            created_at=datetime.strptime(login_body.get("created_at"), MILI_DATE_FMT),
+            role=AccountRole(login_body.get("role")),
             session=session
         )
 

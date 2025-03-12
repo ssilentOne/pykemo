@@ -14,7 +14,7 @@ path.append(abspath("extensions"))
 project = "pykemo"
 author = "ssilentOne"
 
-version = "0.6.1"
+version = "0.6.2"
 
 # -- General configuration
 

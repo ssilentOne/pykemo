@@ -151,6 +151,34 @@ class Post:
         )
 
 
+    @classmethod
+    async def random(cls, session: "KemoSession") -> Optional["Post"]:
+        """
+        Tries to retrieve a random post from the site.
+
+        :param session: The Kemono Session to use for the request.
+
+        :type session: :class:`.KemoSession`
+
+        :return: If a creator is found, retrieve and create a :class:`.Post` instance, otherwise return ``None``.
+        :rtype: Optional[:class:`.Post`]
+        """
+
+        post_res = await session.get("/posts/random")
+
+        if post_res.status != 200:
+            return None
+
+        post_fields = await post_res.json()
+
+        post_exists = await session.get(f"/{post_fields.get('service')}/user/{post_fields.get('artist_id')}/post/{post_fields.get('post_id')}")
+
+        if post_exists.status == 404:
+            return None
+
+        return await add_session_to_post(__class__.from_dict(**(await post_exists.json())), session)
+
+
     async def comments(self) -> CommentsList:
         """
         :return: The comments of the post.
@@ -380,7 +408,7 @@ class Post:
 
         async def revision_from_post(fields: dict) -> PostRevision:
             fields.update(creator=self.creator, is_revision=True)
-            subpost = await add_session_to_post(Post.from_dict(**fields), self.__kemo_session)
+            subpost = await add_session_to_post(__class__.from_dict(**fields), self.__kemo_session)
 
             fields.update(post=subpost)
             return await PostRevision.from_dict(**fields)

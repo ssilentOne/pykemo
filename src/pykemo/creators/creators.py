@@ -131,6 +131,31 @@ class Creator:
         return (await Creator.from_dict(**(await creator_response.json()))).set_underlying_session(kemo_session)
 
 
+    @classmethod
+    async def random(cls, session: "KemoSession") -> Optional["Creator"]:
+        """
+        Tries to retrieve a random creator from the site.
+
+        :param session: The Kemono Session to use for the request.
+
+        :type session: :class:`.KemoSession`
+
+        :return: If a creator is found, retrieve and create a :class:`Creator` instance, otherwise return ``None``.
+        :rtype: Optional[:class:`Creator`]
+        """
+
+        creator_res = await session.get("/artists/random")
+
+        if creator_res.status != 200:
+            return None
+
+        creator = await creator_res.json()
+
+        return cls.from_profile(service=creator.get("service"),
+                                creator_id=creator.get("artist_id"),
+                                session=session)
+
+
     async def announcements(self) -> AnnouncementsList:
         """
         Gets a list of the creator's announcements, if any. Mainly relevant for

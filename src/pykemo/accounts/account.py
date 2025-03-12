@@ -284,3 +284,25 @@ class Account:
         """
 
         return await Creator.from_profile(service, creator_id, self.session)
+
+
+    async def random_creator(self) -> Optional[Creator]:
+        """
+        Wrapper for retrieving a random creator from the site.
+
+        :return: If a creator is found, retrieve and create a :class:`Creator` instance, otherwise return ``None``.
+        :rtype: Optional[:class:`Creator`]
+        """
+
+        return await Creator.random(session=self.session)
+
+
+    async def random_post(self) -> Optional[Post]:
+        """
+        Wrapper for retrieving a random post from the site.
+
+        :return: If a creator is found, retrieve and create a :class:`.Post` instance, otherwise return ``None``.
+        :rtype: Optional[:class:`.Post`]
+        """
+
+        return await Post.random(self.session)

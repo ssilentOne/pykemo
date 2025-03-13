@@ -11,6 +11,7 @@ from .._aux import (
     add_session_to_post,
     before_date,
     get_posts_responses_bodies,
+    parse_tags,
     since_date,
 )
 from ..accounts import Account
@@ -19,6 +20,7 @@ from ..discord import DiscordMessage
 from ..files import File
 from ..posts import ELEMENTS_PER_PAGE, Post, PostsList
 from ..services import ServiceType
+from ..tags import Tag
 
 if TYPE_CHECKING:
     from datetime import datetime
@@ -26,6 +28,7 @@ if TYPE_CHECKING:
 
     from ..services import ServiceLike
     from ..sessions import KemoSession
+    from ..tags import TagLike
 
 MAX_POSTS_LIMIT: int = 1000
 "Arbitrary limit for posts to be queried with auxiliar functions."
@@ -63,6 +66,7 @@ async def get_posts(query: Optional[str]=None,
                     max_posts: int=ELEMENTS_PER_PAGE,
                     before: Optional["datetime"]=None,
                     since: Optional["datetime"]=None,
+                    tags: Optional[list[TagLike]]=None,
                     kemo_session: "KemoSession") -> PostsList:
     """
     Gets all posts that coincide with the given parameters.
@@ -70,14 +74,16 @@ async def get_posts(query: Optional[str]=None,
     :param query: A query string to use in the search.
     :param max_posts: The max number of posts to look through. This is NOT necessarily
                       the number of posts to enter the lists.
-    :param before: Include only posts before this date.
-    :param since: Include only posts after and including this date.
+    :param before: Include only posts before this date, defaults to ``None``.
+    :param since: Include only posts after and including this date, defaults to ``None``.
+    :param tags: The tags to filter the search by.
     :param kemo_session: The Kemono Session to use.
 
     :type query: Optional[:class:`str`]
     :type max_posts: :class:`int`
     :type before: Optional[:class:`datetime.datetime`]
     :type since: Optional[:class:`datetime.datetime`]
+    :type tags: list[:type:`.TagLike`], optional
     :type kemo_session: :class:`.KemoSession`
 
     :return: The list of posts of the query.
@@ -98,10 +104,24 @@ async def get_posts(query: Optional[str]=None,
         post_process=(lambda fields: fields["posts"]),
         kemo_session=kemo_session
     ):
+        # -- filter by date --
         published_str = post_fields["published"]
         if ((before is not None and not before_date(published_str, before)) or
             (since is not None and not since_date(published_str, since))):
             continue
+        # --------------------
+
+        # -- filter by tag --
+        tags_str = post_fields.get("tags", r"{}") # it could not have the field
+        tags_names = parse_tags(tags_str)
+        has_tags = False
+        for tag in tags:
+            if (tag.value if isinstance(tag, Tag) else tag) in tags_names:
+                has_tags = True
+                break
+        if not has_tags:
+            continue
+        # -------------------
 
         post_fields.update(creator=await get_creator(post_fields.get("service"),
                                                      post_fields.get("user"),

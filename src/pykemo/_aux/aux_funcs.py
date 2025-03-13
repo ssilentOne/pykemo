@@ -17,6 +17,7 @@ if TYPE_CHECKING:
     from ..files import FileDict
     from ..posts import Post
     from ..sessions import KemoSession
+    from ..tags import Tag
 
 DateOrFmt: TypeAlias = Union[str, datetime]
 ParamsFmtDict: TypeAlias = dict[str, Union[str, int]]
@@ -199,6 +200,26 @@ async def add_session_to_message(
     return (await msg_task).set_underlying_session(session)
 
 
+async def add_session_to_tag(
+        tag_task: Coroutine[Any, Any, "Tag"],
+        session: "KemoSession"
+) -> "Tag":
+    """
+    Resolves the task, and _then_ assigns a session to a resolved tag.
+    
+    :param post_task: The task to be awaited.
+    :param session: The session to assign.
+    
+    :type post_task: Coroutine[Any, Any, :class:`.Tag`]
+    :type session: :class:`.KemoSession`
+    
+    :return: The tag, as it would be returned by the task, but with the session assigned.
+    :rtype: :class:`.Tag`
+    """
+
+    return (await tag_task).set_underlying_session(session)
+
+
 def query_params(query: Optional[str]=None,
                  offset: Optional[int]=None,
                  stepping: int=0) -> ParamsFmtDict:
@@ -300,3 +321,18 @@ async def get_posts_responses_bodies(
             bodies.extend(body)
 
     return bodies
+
+
+def parse_tags(tags_str: str) -> list[str]:
+    """
+    Tries to separate tag names from a string of the style \"{tag1,tag2,tag3,...}\"
+    
+    :param tags_str: The tags unparsed string.
+    
+    :type tags_str: :class:`str`
+    
+    :return: A list of the parsed tags. Could be empty.
+    :rtype: list[:class:`str`]
+    """
+
+    return tags_str.lstrip("{").rstrip("}").split(",")

@@ -106,7 +106,7 @@ class Post:
     _revisions: PostRevsList = field(default_factory=list, init=False, repr=False)
     __revs_loaded: bool = field(default=False, init=False, repr=False)
 
-    __kemo_session: Optional["KemoSession"] = field(default=False, init=False, repr=False)
+    __kemo_session: Optional["KemoSession"] = field(default=None, init=False, repr=False)
 
 
     @classmethod

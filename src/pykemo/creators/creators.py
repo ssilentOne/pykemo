@@ -21,11 +21,13 @@ from ..discord import ChannelsList, DiscordChannel
 from ..fanbox import Fancard
 from ..posts import ELEMENTS_PER_PAGE, Post, PostsList
 from ..services import ServiceType
+from ..tags import Tag
 
 if TYPE_CHECKING:
     from ..core import UrlLike
     from ..services import ServiceLike
     from ..sessions import KemoSession
+    from ..tags import TagsResult
 
 CreatorsList: TypeAlias = list["Creator"]
 _CreatorFields: TypeAlias = Literal["id", "name", "service", "indexed", "updated",
@@ -431,3 +433,25 @@ class Creator:
                 return (await DiscordChannel.from_dict(**chan_fields)).set_underlying_session(self.__kemo_session)
 
         return None
+
+
+    async def tags(self, *, as_dict: bool=False) -> "TagsResult":
+        """
+        Searches for the tags of this creator.
+
+        :param as_dict: Wether to return a dictionary with the tags names as keys and their post
+                        counts as values, defaults to ``False``.
+
+        :type as_dict: :class:`bool`, optional
+
+        :return: A list with all the tags attributed to this creator.
+        :rtype: :type:`.TagsResult`
+        """
+
+        search_res = await self.__kemo_session.get(f"/{self.service}/user/{self.id}/tags")
+
+        if search_res.status != 200:
+            return ({} if as_dict else [])
+
+        return await Tag.process_tag_response((await search_res.json()).get("tags"),
+                                              as_dict=as_dict)

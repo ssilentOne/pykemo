@@ -17,10 +17,10 @@ if TYPE_CHECKING:
     from ..files import FileDict
     from ..posts import Post
     from ..sessions import KemoSession
-    from ..tags import Tag
+    from ..tags import Tag, TagLike
 
 DateOrFmt: TypeAlias = Union[str, datetime]
-ParamsFmtDict: TypeAlias = dict[str, Union[str, int]]
+ParamsTuples: TypeAlias = list[tuple[str, Union[str, int]]]
 JsonBody: TypeAlias = dict # Could have anything inside, really
 
 DEFAULT_DATE_FMT: str = r"%Y-%m-%dT%H:%M:%S"
@@ -222,38 +222,44 @@ async def add_session_to_tag(
 
 def query_params(query: Optional[str]=None,
                  offset: Optional[int]=None,
-                 stepping: int=0) -> ParamsFmtDict:
+                 stepping: int=0,
+                 tags: Optional[list["TagLike"]]=None) -> ParamsTuples:
     """
     .. warning:: `(for internal purposes)`
-    Formats a parameters dictionary to send with a response in messages queries.
+    Formats a parameters list to send with a response in messages queries.
+    Such list has tuples of strings isntead of a dictionary, to allow for duplicated keys.
 
     :param query: The search query string of the dict.
     :param offset: The search offset int of the dict.
     :param stepping: The stepping to which the search will be made.
+    :param tags: The tags to filter the search by, defaults to ``None``.
 
     :type query: Optional[:class:`str`]
     :type offset: Optional[:class:`int`]
     :type stepping: :class:`int`
+    :type tags: list[:type:`.TagLike`], optional
 
     :raises ValueError: If ``offset`` is not a multiple of ``stepping``.
 
-    :return: A dictionary already poblated with the parameters.
+    :return: A tuple already poblated with the parameters.
     :rtype: :type:`.ParamsFmtDict`
     """
 
-    params = {}
+    params = []
 
     if query is not None:
-        params.update(q=query)
+        params.append(("q", query))
 
     if offset is not None:
         if offset % stepping != 0:
             raise ValueError(f"Value for offset {offset} not valid."
                                 f" Must be a multiple of {stepping}.")
-        offset_val = offset
+        params.append(("o", offset))
 
+    if tags is not None:
+        for tag in tags:
+            params.append(("tag", tag))
 
-    params.update(o=offset_val)
     return params
 
 
@@ -263,6 +269,7 @@ async def get_posts_responses_bodies(
         query: Optional[str]=None,
         max_posts: Optional[int]=None,
         page_stepping: int=DEFAULT_PAGE_SIZE,
+        tags: Optional[list["TagLike"]]=None,
         post_process: Optional[Callable[[JsonBody], JsonBody]]=None,
         kemo_session: "KemoSession") -> list[JsonBody]:
     """
@@ -272,6 +279,7 @@ async def get_posts_responses_bodies(
     :param query: A search query string to filter the results.
     :param max_posts: The max posts to fit into the final list. If not set, the minimum value possible will be used.
     :param page_stepping: The stepping of the paging.
+    :param tags: The tags to filter the search by, defaults to ``None``.
     :param post_process: A small function to be applied after unpacking each response body.
     :param kemo_session: The session to make the requests with.
 
@@ -279,6 +287,7 @@ async def get_posts_responses_bodies(
     :type query: Optional[:class:`str`]
     :type max_posts: Optional[:class:`int`]
     :type page_stepping: :class:`int`
+    :type tags: list[:type:`.TagLike`], optional
     :type post_process: Optional[Callable[[:type:`.JsonBody`], :type:`.JsonBody`]]
     :type kemosession: :class:`.KemoSession`
 
@@ -306,7 +315,8 @@ async def get_posts_responses_bodies(
             endpoint,
             params=query_params(query,
                                 page * page_stepping,
-                                page_stepping)
+                                page_stepping,
+                                tags=tags)
         )
 
         tasks.append(unpack_json(page_coroutine))

@@ -66,7 +66,7 @@ async def get_posts(query: Optional[str]=None,
                     max_posts: int=ELEMENTS_PER_PAGE,
                     before: Optional["datetime"]=None,
                     since: Optional["datetime"]=None,
-                    tags: Optional[list[TagLike]]=None,
+                    tags: Optional[list["TagLike"]]=None,
                     kemo_session: "KemoSession") -> PostsList:
     """
     Gets all posts that coincide with the given parameters.
@@ -76,7 +76,7 @@ async def get_posts(query: Optional[str]=None,
                       the number of posts to enter the lists.
     :param before: Include only posts before this date, defaults to ``None``.
     :param since: Include only posts after and including this date, defaults to ``None``.
-    :param tags: The tags to filter the search by.
+    :param tags: The tags to filter the search by, defaults to ``None``.
     :param kemo_session: The Kemono Session to use.
 
     :type query: Optional[:class:`str`]
@@ -101,6 +101,7 @@ async def get_posts(query: Optional[str]=None,
         query=query,
         max_posts=max_posts,
         page_stepping=ELEMENTS_PER_PAGE,
+        tags=tags,
         post_process=(lambda fields: fields["posts"]),
         kemo_session=kemo_session
     ):
@@ -110,18 +111,6 @@ async def get_posts(query: Optional[str]=None,
             (since is not None and not since_date(published_str, since))):
             continue
         # --------------------
-
-        # -- filter by tag --
-        tags_str = post_fields.get("tags", r"{}") # it could not have the field
-        tags_names = parse_tags(tags_str)
-        has_tags = False
-        for tag in tags:
-            if (tag.value if isinstance(tag, Tag) else tag) in tags_names:
-                has_tags = True
-                break
-        if not has_tags:
-            continue
-        # -------------------
 
         post_fields.update(creator=await get_creator(post_fields.get("service"),
                                                      post_fields.get("user"),

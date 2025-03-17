@@ -31,6 +31,7 @@ if TYPE_CHECKING:
     from ..services import ServiceLike
     from ..sessions import KemoSession
 
+PostID: TypeAlias = str
 PostsList: TypeAlias = list["Post"]
 CommentsList: TypeAlias = list[Comment]
 PostRevsList: TypeAlias = list[PostRevision]
@@ -62,8 +63,10 @@ class Post:
     :param attachments: All the files under this post.
     :param creator: The creator of this post.
     :param is_revision: Flag to see if this post is a revision of another.
+    :param prev_id: If available, the ID of the \"previous\" post.
+    :param next_id: If available, the ID of the \"next\" post.
 
-    :type id: :class:`str`
+    :type id: :type:`.PostID`
     :type creator_id: :class:`str`
     :type service: :type:`.ServiceLike`
     :type title: :class:`str`
@@ -78,9 +81,11 @@ class Post:
     :type attachments: list[:class:`.File`]
     :type creator: :class:`.Creator`
     :type is_revision: :class:`bool`
+    :type prev_id: Optional[:type:`.PostID`]
+    :type next_id: Optional[:type:`.PostID`]
     """
 
-    id: str
+    id: PostID
     creator_id: str
     service: "ServiceLike"
     title: str
@@ -95,6 +100,8 @@ class Post:
     attachments: FilesList = field(default_factory=list, repr=False)
     creator: "Creator" = field(repr=False)
     is_revision: bool = field(default=False, repr=False)
+    prev_id: Optional[PostID] = field(default=None, repr=False)
+    next_id: Optional[PostID] = field(default=None, repr=False)
 
     # unloaded fields
     _comments: CommentsList = field(default_factory=list, init=False, repr=False)
@@ -127,7 +134,7 @@ class Post:
         edited = (datetime.strptime(edited_field, DEFAULT_DATE_FMT)
                  if edited_field is not None
                  else None)
-        
+
         file_dict = fields.get("file")
         attachments = fields.get("attachments")
 
@@ -147,7 +154,9 @@ class Post:
             attachments=await gather(*[File.from_dict(**sanitize_data_url(attachment_fields))
                          for attachment_fields in attachments]),
             creator=fields.get("creator", None),
-            is_revision=fields.get("is_revision", False)
+            is_revision=fields.get("is_revision", False),
+            prev_id=fields.get("prev", None),
+            next_id=fields.get("next", None)
         )
 
 
@@ -176,7 +185,10 @@ class Post:
         if post_exists.status == 404:
             return None
 
-        return await add_session_to_post(__class__.from_dict(**(await post_exists.json())), session)
+        fields = (await post_exists.json()).get("post")
+        fields.update(creator=None) # let the post initialize it explicitely
+
+        return await add_session_to_post(__class__.from_dict(**fields), session)
 
 
     async def comments(self) -> CommentsList:
@@ -215,6 +227,28 @@ class Post:
             self._revisions = await self._fetch_revisions()
 
         return self._revisions
+
+
+    async def prev_post(self) -> Optional["Post"]:
+        """
+        Tries to load the previous post by its ID.
+
+        :return: The post, already loaded; or ``None`` if it wasn't found.
+        :rtype: Optional[:class:`.Post`]
+        """
+
+        return await self._fetch_other_post(self.prev_id)
+
+
+    async def next_post(self) -> Optional["Post"]:
+        """
+        Tries to load the next post by its ID.
+
+        :return: The post, already loaded; or ``None`` if it wasn't found.
+        :rtype: Optional[:class:`.Post`]
+        """
+
+        return await self._fetch_other_post(self.next_id)
 
 
     @property
@@ -373,6 +407,7 @@ class Post:
 
         return await gather(*comments_tasks)
 
+
     async def _fetch_flagged(self) -> bool:
         """
         .. warning:: `(for internal purposes)`
@@ -417,3 +452,30 @@ class Post:
             revisions_tasks.append(revision_from_post(revs_fields))
 
         return await gather(*revisions_tasks)
+
+
+    async def _fetch_other_post(self, other_id: Optional[PostID]=None) -> Optional["Post"]:
+        """
+        Tries to fetch another post of the same creator by ID.
+
+        :param other_id: The given ID of the desired post, defaults to ``None``.
+
+        :type other_id: :type:`.PostID`, optional
+
+        :return: The post, already loaded; or ``None`` if it wasn't found.
+        :rtype: Optional[:class:`.Post`]
+        """
+
+        if other_id is None:
+            return None
+
+        res = await self.__kemo_session.get(f"/{self.service}/user/{self.creator_id}/post/{other_id}")
+
+        if res.status == 404:
+            return None
+
+        fields = (await res.json()).get("post")
+        fields.update(creator=self.creator)
+
+        return await add_session_to_post(Post.from_dict(**fields),
+                                         self.__kemo_session)

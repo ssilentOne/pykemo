@@ -333,7 +333,10 @@ class Creator:
         if response.status == 404:
             return None
 
-        return await add_session_to_post(Post.from_dict(**(await response.json()).get("post")),
+        fields = (await response.json()).get("post")
+        fields.update(creator=self)
+
+        return await add_session_to_post(Post.from_dict(**fields),
                                          self.__kemo_session)
 
 

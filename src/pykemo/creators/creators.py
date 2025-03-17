@@ -15,7 +15,7 @@ from .._aux import (
     get_posts_responses_bodies,
     since_date,
 )
-from ..announcements import Announcement
+from ..patreon import Announcement
 from ..core import UrlType
 from ..discord import ChannelsList, DiscordChannel
 from ..fanbox import Fancard

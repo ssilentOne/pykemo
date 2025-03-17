@@ -14,7 +14,7 @@ Creator
 Announcements
 -------------
 
-.. autoclass:: pykemo.announcements.announcements.Announcement
+.. autoclass:: pykemo.patreon.announcements.Announcement
     :members:
     :exclude-members: from_dict
 

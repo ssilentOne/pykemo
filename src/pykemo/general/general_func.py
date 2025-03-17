@@ -11,7 +11,6 @@ from .._aux import (
     add_session_to_post,
     before_date,
     get_posts_responses_bodies,
-    parse_tags,
     since_date,
 )
 from ..accounts import Account
@@ -20,7 +19,6 @@ from ..discord import DiscordMessage
 from ..files import File
 from ..posts import ELEMENTS_PER_PAGE, Post, PostsList
 from ..services import ServiceType
-from ..tags import Tag
 
 if TYPE_CHECKING:
     from datetime import datetime

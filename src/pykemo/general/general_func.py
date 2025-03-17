@@ -163,6 +163,38 @@ async def get_creator_links(service: "ServiceLike", creator_id: str) -> Creators
     return links
 
 
+async def random_post(session: "KemoSession") -> Optional[Post]:
+    """
+    Tries to retrieve a random post from the site.
+
+    :param session: The Kemono Session to use for the request.
+
+    :type session: :class:`.KemoSession`
+
+    :return: If a creator is found, retrieve and create a :class:`.Post` instance, otherwise return ``None``.
+    :rtype: Optional[:class:`.Post`]
+    """
+
+    post_res = await session.get("/posts/random")
+
+    if post_res.status != 200:
+        return None
+
+    post_fields = await post_res.json()
+    service = post_fields.get('service')
+    creator_id = post_fields.get('artist_id')
+
+    post_exists = await session.get(f"/{service}/user/{creator_id}/post/{post_fields.get('post_id')}")
+
+    if post_exists.status == 404:
+        return None
+
+    fields = (await post_exists.json()).get("post")
+    fields.update(creator=(await get_creator(service, creator_id, session)))
+
+    return await add_session_to_post(Post.from_dict(**fields), session)
+
+
 async def get_file_hash(hash: str, kemo_session: "KemoSession") -> FileHashResult:
     """
     Search a file by hash. Also tries to retrieve posts where such file is present.

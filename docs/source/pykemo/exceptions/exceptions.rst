@@ -10,6 +10,13 @@ General
     :members:
 
 
+Roles
+-----
+
+.. autoexception:: pykemo.exceptions.roles.InvalidRole
+    :members:
+
+
 Services
 --------
 

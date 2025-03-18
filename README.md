@@ -26,10 +26,12 @@ Python library binding to the [Kemono API](https://kemono.su/documentation/api).
 It has the following features:
 
 * **All HTTP requests logic abstracted behind Python  types.** You can interact with the API
-using custom classes like `Creator` or `Post`.
+using custom classes like `Creator` or `Post`. The library revolves around the `KemoSession` type.
     - _This means that for downloading files there is already an interface_ (`File`) _for that._
 
 * **OS Independent.** Being pure-python, the library works on Windows, MacOS and Linux alike.
+    - _That being said,_ it **is** possible that [some dependencies](https://pypi.org/project/aiohttp/#files)
+    require a specific build depending on the platform.
 
 * **Asynchronous request for performance boosts.** With the use of async programming, the requests
 are all made _concurrently_.

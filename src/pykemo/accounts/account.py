@@ -23,6 +23,7 @@ from ..sessions import KemoSession
 from .role import AccountRole
 
 if TYPE_CHECKING:
+    from ..posts import PostID
     from ..services import ServiceLike
 
 _AccountFields: TypeAlias = Literal["id", "username", "created_at", "role"]
@@ -295,6 +296,33 @@ class Account:
         """
 
         return await Creator.random(session=self.session)
+
+
+    async def get_post(self,
+                       service: "ServiceLike",
+                       post_id: "PostID") -> Optional[Post]:
+        """
+        Wrapper for fetching a post without the creator ID.
+        
+        :param service: The service the post falls under.
+        :param post_id: The ID of the specific post.
+        
+        :type service: :type:`.ServiceLike`
+        :type post_id: :type:`.PostID`
+        
+        :return: The loaded post, if it was found. If not, returns ``None``.
+        :rtype: Optional[:class:`.Post`]
+        """
+
+        res = await self.session.get(f"/{service}/post/{post_id}")
+
+        if res.status == 404:
+            return None
+
+        creator_id = (await res.json()).get("artist_id")
+        creator = await self.get_creator(service, creator_id)
+
+        return await creator.get_post(post_id)
 
 
     async def random_post(self) -> Optional[Post]:

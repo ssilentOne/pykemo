@@ -134,7 +134,7 @@ class Account:
                        user: str,
                        password: str) -> "Account":
         """
-        Tries to register a accountuser.
+        Tries to register a account user.
         
         :param user: The username to try to register with.
         :param password: The password to try to register with.

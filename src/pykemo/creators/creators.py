@@ -15,16 +15,17 @@ from .._aux import (
     get_posts_responses_bodies,
     since_date,
 )
-from ..patreon import Announcement
 from ..core import UrlType
 from ..discord import ChannelsList, DiscordChannel
 from ..fanbox import Fancard
+from ..patreon import Announcement
 from ..posts import ELEMENTS_PER_PAGE, Post, PostsList
 from ..services import ServiceType
 from ..tags import Tag
 
 if TYPE_CHECKING:
     from ..core import UrlLike
+    from ..posts import PostID
     from ..services import ServiceLike
     from ..sessions import KemoSession
     from ..tags import TagsResult
@@ -313,13 +314,13 @@ class Creator:
         return await gather(*posts_tasks)
 
 
-    async def get_post(self, post_id: str) -> Optional[Post]:
+    async def get_post(self, post_id: "PostID") -> Optional[Post]:
         """
         Get a specific post by its ID.
 
         :param post_id: The ID of the post in question.
 
-        :type post_id: :class:`str`
+        :type post_id: :type:`.PostID`
 
         :return: The post, if found. Otherwise returns ``None``.
         :rtype: Optional[`.Post`]

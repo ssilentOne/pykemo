@@ -306,6 +306,17 @@ async def login(
     return await Account.login(user, password)
 
 
+async def register(
+        user: str,
+        password: str
+    ) -> Account:
+    """
+    An alias of :meth:`.Account.register()`
+    """
+
+    return await Account.register(user, password)
+
+
 async def save_posts(path: "PathLike",
                      posts: Iterable[Post],
                      *,

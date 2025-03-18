@@ -305,4 +305,21 @@ class Account:
         :rtype: Optional[:class:`.Post`]
         """
 
-        return await Post.random(self.session)
+        post_res = await self.session.get("/posts/random")
+
+        if post_res.status != 200:
+            return None
+
+        post_fields = await post_res.json()
+        service = post_fields.get('service')
+        creator_id = post_fields.get('artist_id')
+
+        post_exists = await self.session.get(f"/{service}/user/{creator_id}/post/{post_fields.get('post_id')}")
+
+        if post_exists.status == 404:
+            return None
+
+        fields = (await post_exists.json()).get("post")
+        fields.update(creator=(await self.get_creator(service, creator_id)))
+
+        return await add_session_to_post(Post.from_dict(**fields), self.session)

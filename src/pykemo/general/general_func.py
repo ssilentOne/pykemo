@@ -27,6 +27,7 @@ if TYPE_CHECKING:
     from ..services import ServiceLike
     from ..sessions import KemoSession
     from ..tags import TagLike
+    from ..posts import PostID
 
 MAX_POSTS_LIMIT: int = 1000
 "Arbitrary limit for posts to be queried with auxiliar functions."
@@ -116,6 +117,35 @@ async def get_posts(query: Optional[str]=None,
         posts_tasks.append(add_session_to_post(Post.from_dict(**post_fields), kemo_session))
 
     return await gather(*posts_tasks)
+
+
+async def get_post(service: "ServiceLike",
+                   post_id: "PostID",
+                   kemo_session: "KemoSession") -> Optional[Post]:
+    """
+    Tries to fetch a post by its service and ID, automatically searching for its creator.
+    
+    :param service: The service the post falls under.
+    :param post_id: The ID of the specific post.
+    :param kemo_session: The Kemono Session to use.
+    
+    :type service: :type:`.ServiceLike`
+    :type post_id: :type:`.PostID`
+    :type kemo_session: :class:`.KemoSession`
+    
+    :return: The loaded post, if it was found. If not, returns ``None``.
+    :rtype: Optional[:class:`.Post`]
+    """
+
+    res = await kemo_session.get(f"/{service}/post/{post_id}")
+
+    if res.status == 404:
+        return None
+
+    creator_id = (await res.json()).get("artist_id")
+    creator = await get_creator(service, creator_id, kemo_session)
+
+    return await creator.get_post(post_id)
 
 
 async def get_creator(service: "ServiceLike",

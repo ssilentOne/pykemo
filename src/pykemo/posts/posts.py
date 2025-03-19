@@ -6,7 +6,7 @@ from asyncio import gather
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional, TypeAlias, Union
+from typing import TYPE_CHECKING, Optional, Self, TypeAlias, Union
 
 from tqdm.asyncio import tqdm_asyncio
 
@@ -117,7 +117,7 @@ class Post:
 
 
     @classmethod
-    async def from_dict(cls, **fields) -> "Post":
+    async def from_dict(cls, **fields) -> Self:
         """
         Initializes a Post instance from a response fields.
 
@@ -198,7 +198,7 @@ class Post:
         return self._revisions
 
 
-    async def prev_post(self) -> Optional["Post"]:
+    async def prev_post(self) -> Optional[Self]:
         """
         Tries to load the previous post by its ID.
 
@@ -209,7 +209,7 @@ class Post:
         return await self._fetch_other_post(self.prev_id)
 
 
-    async def next_post(self) -> Optional["Post"]:
+    async def next_post(self) -> Optional[Self]:
         """
         Tries to load the next post by its ID.
 
@@ -242,7 +242,7 @@ class Post:
         return ([self.file] if self.file is not None else []) + self.attachments
 
 
-    def set_underlying_session(self, ks: "KemoSession") -> "Post":
+    def set_underlying_session(self, ks: "KemoSession") -> Self:
         """
         Quietly sets the session which the post uses for its requests.
         
@@ -423,7 +423,7 @@ class Post:
         return await gather(*revisions_tasks)
 
 
-    async def _fetch_other_post(self, other_id: Optional[PostID]=None) -> Optional["Post"]:
+    async def _fetch_other_post(self, other_id: Optional[PostID]=None) -> Optional[Self]:
         """
         Tries to fetch another post of the same creator by ID.
 

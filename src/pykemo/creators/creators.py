@@ -6,7 +6,7 @@ from asyncio import gather
 from collections.abc import Coroutine
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Literal, Optional, TypeAlias, Union
+from typing import TYPE_CHECKING, Any, Literal, Optional, Self, TypeAlias, Union
 
 from .._aux import (
     MILI_DATE_FMT,
@@ -86,7 +86,7 @@ class Creator:
 
 
     @classmethod
-    async def from_dict(cls, **fields: CreatorDict) -> "Creator":
+    async def from_dict(cls, **fields: CreatorDict) -> Self:
         """
         Initializes a creator from a dictionary containing its properties.
 
@@ -110,7 +110,7 @@ class Creator:
     async def from_profile(cls,
                            service: "ServiceLike",
                            creator_id: str,
-                           kemo_session: "KemoSession") -> Optional["Creator"]:
+                           kemo_session: "KemoSession") -> Optional[Self]:
         """
         Retrieves a creator using its profile info.
 
@@ -135,7 +135,7 @@ class Creator:
 
 
     @classmethod
-    async def random(cls, session: "KemoSession") -> Optional["Creator"]:
+    async def random(cls, session: "KemoSession") -> Optional[Self]:
         """
         Tries to retrieve a random creator from the site.
 
@@ -220,7 +220,7 @@ class Creator:
         return f"{UrlType.SITE}/{self.service}/user/{self.id}"
 
 
-    async def other_links(self) -> list["Creator"]:
+    async def other_links(self) -> list[Self]:
         """
         Searches for other accounts of this creator.
 
@@ -245,7 +245,7 @@ class Creator:
         return [lnk for lnk in await gather(*links_tasks) if lnk is not None]
 
 
-    def set_underlying_session(self, ks: "KemoSession") -> "Creator":
+    def set_underlying_session(self, ks: "KemoSession") -> Self:
         """
         Quietly sets the session which the creator uses for its requests.
         

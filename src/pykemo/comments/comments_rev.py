@@ -4,6 +4,7 @@ Comment revisions module.
 
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Self
 
 DEFAULT_REV_DATE_FMT: str = r"%Y-%m-%dT%H:%M:%S.%f"
 "The default date formatting to use for comment revisions."
@@ -31,7 +32,7 @@ class CommentRevision:
 
 
     @classmethod
-    async def from_dict(cls, **fields) -> "CommentRevision":
+    async def from_dict(cls, **fields) -> Self:
         """
         Initializes a CommentRevision instance from a response fields.
 

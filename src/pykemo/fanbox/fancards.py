@@ -4,7 +4,8 @@ Fancards module. Exclusive to Fanbox service.
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional, Self
+
 from ..files import File
 
 if TYPE_CHECKING:
@@ -66,7 +67,7 @@ class Fancard:
 
 
     @classmethod
-    async def from_dict(cls, **fields) -> "Fancard":
+    async def from_dict(cls, **fields) -> Self:
         """
         Initializes a Fancard instance from a response fields.
 

@@ -3,7 +3,7 @@ Discord users module.
 """
 
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any, Optional, Self
 
 from ..core import UrlType
 from ..files import File
@@ -56,7 +56,7 @@ class DiscordUser:
 
 
     @classmethod
-    async def from_dict(cls, **fields) -> "DiscordUser":
+    async def from_dict(cls, **fields) -> Self:
         """
         Initializes a DiscordUser instance from a response fields.
 

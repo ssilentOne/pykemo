@@ -3,7 +3,7 @@ Kemono session module.
 """
 
 from types import TracebackType
-from typing import TYPE_CHECKING, Optional, TypeAlias
+from typing import TYPE_CHECKING, Optional, Self, TypeAlias
 
 from aiohttp import ClientSession
 
@@ -42,7 +42,7 @@ class KemoSession:
 
 
     @classmethod
-    def with_token(cls, cookie_auth: TokenValue) -> "KemoSession":
+    def with_token(cls, cookie_auth: TokenValue) -> Self:
         """
         Creates a session instace, with the session cookie set.
 
@@ -69,7 +69,7 @@ class KemoSession:
         await self.__aio_session.close()
 
 
-    async def __aenter__(self) -> "KemoSession":
+    async def __aenter__(self) -> Self:
         return self
 
 

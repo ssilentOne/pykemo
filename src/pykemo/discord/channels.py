@@ -5,7 +5,7 @@ Discord channels module.
 from asyncio import gather
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional, TypeAlias
+from typing import TYPE_CHECKING, Optional, Self, TypeAlias
 
 from .._aux import (
     MILI_DATE_FMT,
@@ -50,7 +50,7 @@ class DiscordChannel:
 
 
     @classmethod
-    async def from_dict(cls, **fields) -> "DiscordChannel":
+    async def from_dict(cls, **fields) -> Self:
         """
         Initializes a DiscordChannel instance from a response fields.
 
@@ -90,7 +90,7 @@ class DiscordChannel:
         return f"{UrlType.SITE}/discord/server/{self.server_id}#{self.id}"
 
 
-    def set_underlying_session(self, ks: "KemoSession") -> "DiscordChannel":
+    def set_underlying_session(self, ks: "KemoSession") -> Self:
         """
         Quietly sets the session which the channel uses for its requests.
         

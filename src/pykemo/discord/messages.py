@@ -5,7 +5,7 @@ Discord messages module.
 from asyncio import gather
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional, TypeAlias
+from typing import TYPE_CHECKING, Optional, Self, TypeAlias
 
 from .._aux import sanitize_data_url
 from ..files import File, FilesList
@@ -66,7 +66,7 @@ class DiscordMessage:
 
 
     @classmethod
-    async def from_dict(cls, **fields) -> "DiscordMessage":
+    async def from_dict(cls, **fields) -> Self:
         """
         Initializes a DiscordMessage instance from a response fields.
 
@@ -95,7 +95,7 @@ class DiscordMessage:
         )
 
 
-    def set_underlying_session(self, ks: "KemoSession") -> "DiscordMessage":
+    def set_underlying_session(self, ks: "KemoSession") -> Self:
         """
         Quietly sets the session which the message uses for its requests.
         

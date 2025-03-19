@@ -3,7 +3,7 @@ Auxiliar classes module.
 """
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Self
 
 if TYPE_CHECKING:
     from ..discord import MessagesList
@@ -31,7 +31,7 @@ class FileHashResult:
 
 
     @classmethod
-    def empty(cls) -> "FileHashResult":
+    def empty(cls) -> Self:
         """
         :return: An instance of the result with empty fields.
 

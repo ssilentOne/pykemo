@@ -3,7 +3,7 @@ Post revisions module.
 """
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 if TYPE_CHECKING:
     from .posts import Post
@@ -27,7 +27,7 @@ class PostRevision:
 
 
     @classmethod
-    async def from_dict(cls, **fields) -> "PostRevision":
+    async def from_dict(cls, **fields) -> Self:
         """
         Initializes a PostRevision instance from a response fields.
 

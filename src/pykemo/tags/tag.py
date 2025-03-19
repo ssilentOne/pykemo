@@ -4,7 +4,7 @@ Tags module.
 
 from asyncio import gather
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Iterable, Literal, Optional, TypeAlias, Union
+from typing import TYPE_CHECKING, Iterable, Literal, Optional, Self, TypeAlias, Union
 
 from .._aux import add_session_to_tag
 
@@ -37,7 +37,7 @@ class Tag:
 
 
     @classmethod
-    async def from_dict(cls, **fields) -> "Tag":
+    async def from_dict(cls, **fields) -> Self:
         """
         Initializes a Tag instance from a response fields.
 
@@ -80,7 +80,7 @@ class Tag:
                         name: str,
                         ks: "KemoSession",
                         *,
-                        cache: Optional[TagsDict]=None) -> Optional["Tag"]:
+                        cache: Optional[TagsDict]=None) -> Optional[Self]:
         """
         Tries to retrieve a tag with a given name. It may not exist.
 
@@ -113,7 +113,7 @@ class Tag:
                         names: Iterable[str],
                         ks: "KemoSession",
                         *,
-                        cache: Optional[TagsDict]=None) -> list["Tag"]:
+                        cache: Optional[TagsDict]=None) -> list[Self]:
         """
         Tries to retrieve tags based on their names.
 
@@ -190,7 +190,7 @@ class Tag:
         return await gather(*tag_tasks)
 
 
-    def set_underlying_session(self, ks: "KemoSession") -> "Tag":
+    def set_underlying_session(self, ks: "KemoSession") -> Self:
         """
         Quietly sets the session which the tag uses for its requests.
         

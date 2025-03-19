@@ -4,7 +4,7 @@ Announcements module.
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from ..services import ServiceType
 
@@ -45,7 +45,7 @@ class Announcement:
 
 
     @classmethod
-    async def from_dict(cls, **fields) -> "Announcement":
+    async def from_dict(cls, **fields) -> Self:
         """
         Initializes an Announcement instance from a response fields.
 

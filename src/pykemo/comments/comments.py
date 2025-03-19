@@ -5,7 +5,7 @@ Comments module.
 from asyncio import gather
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Self
 
 from .comments_rev import CommentRevision
 
@@ -57,7 +57,7 @@ class Comment:
 
 
     @classmethod
-    async def from_dict(cls, **fields) -> "Comment":
+    async def from_dict(cls, **fields) -> Self:
         """
         Initializes a Comment instance from a response fields.
 

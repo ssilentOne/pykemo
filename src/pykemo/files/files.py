@@ -3,7 +3,7 @@ Files module.
 """
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal, Optional, TypeAlias, Union
+from typing import TYPE_CHECKING, Literal, Optional, Self, TypeAlias, Union
 
 from tqdm.asyncio import tqdm_asyncio
 
@@ -69,7 +69,7 @@ class File:
 
 
     @classmethod
-    async def from_dict(cls, **fields) -> "File":
+    async def from_dict(cls, **fields) -> Self:
         """
         Initializes a File instance from a response fields.
 
@@ -148,7 +148,7 @@ class File:
         return f"{self._url_root}{self._rel_path}"
 
 
-    def with_session(self, ks: "KemoSession") -> "File":
+    def with_session(self, ks: "KemoSession") -> Self:
         """
         Quietly sets the session which the post uses for its requests.
         

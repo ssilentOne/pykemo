@@ -13,7 +13,7 @@ from .._aux import (
     get_posts_responses_bodies,
     since_date,
 )
-from ..accounts import Account
+from ..accounts import Consumer
 from ..creators import Creator, CreatorsList
 from ..discord import DiscordMessage
 from ..files import File
@@ -298,23 +298,23 @@ async def get_api_version(kemo_session: "KemoSession") -> str:
 async def login(
         user: str,
         password: str,
-    ) -> Account:
+    ) -> Consumer:
     """
-    An alias of :meth:`.Account.login()`
+    An alias for logging an automatically deciding which account rank is returned.
     """
 
-    return await Account.login(user, password)
+    return await Consumer.login(user, password)
 
 
 async def register(
         user: str,
         password: str
-    ) -> Account:
+    ) -> Consumer:
     """
-    An alias of :meth:`.Account.register()`
+    An alias for registering an account. Is is assumed each new account is born as a consumer.
     """
 
-    return await Account.register(user, password)
+    return await Consumer.register(user, password)
 
 
 async def save_posts(path: "PathLike",

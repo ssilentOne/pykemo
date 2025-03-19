@@ -1,6 +1,6 @@
 """
-Account package.
+Accounts package.
 """
 
-from .account import *
+from .consumer import *
 from .role import *

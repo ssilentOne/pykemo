@@ -7,5 +7,5 @@ with the Kemono API.
 Accounts
 --------
 
-.. autoclass:: pykemo.accounts.account.Account
+.. autoclass:: pykemo.accounts.consumer.Consumer
     :members:

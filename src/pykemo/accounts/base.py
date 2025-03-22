@@ -40,6 +40,23 @@ class _AccountBase(ABC, _AccountParams):
     """
 
     @classmethod
+    async def from_dict(cls, **fields) -> Self:
+        """
+        Initializes an Account instance from a response fields.
+
+        :return: An instace of an account.
+        :rtype: :class:`.CommentRevision`
+        """
+
+        return cls(
+            id=fields.get("id"),
+            username=fields.get("username"),
+            created_at=datetime.strptime(fields.get("created_at"), MILI_DATE_FMT),
+            session=fields.get("session", KemoSession())
+        )
+
+
+    @classmethod
     async def login(cls,
                     user: str,
                     password: str,
@@ -66,12 +83,8 @@ class _AccountBase(ABC, _AccountParams):
         session = (session if session is not None else KemoSession())
         res_json = await cls._get_login_res(user, password, session)
 
-        return cls(
-            id=res_json.get("id"),
-            username=res_json.get("username"),
-            created_at=datetime.strptime(res_json.get("created_at"), MILI_DATE_FMT),
-            ks=session
-        )
+        res_json.update(session=session)
+        return await cls.from_dict(**res_json)
 
 
     @classmethod

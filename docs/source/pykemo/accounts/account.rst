@@ -10,13 +10,16 @@ Accounts
 .. autoclass:: pykemo.accounts.cons.Consumer
     :members:
     :inherited-members:
+    :exclude-members: from_dict
 
 
 .. autoclass:: pykemo.accounts.mod.Moderator
     :members:
     :inherited-members:
+    :exclude-members: from_dict
 
 
 .. autoclass:: pykemo.accounts.admin.Admin
     :members:
     :inherited-members:
+    :exclude-members: from_dict

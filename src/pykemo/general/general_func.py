@@ -3,7 +3,7 @@ Module for auxiliar functions.
 """
 
 from asyncio import gather
-from typing import TYPE_CHECKING, Iterable, Optional
+from typing import TYPE_CHECKING, Iterable, Optional, TypeAlias, Union
 
 from .._aux import (
     FileHashResult,
@@ -13,27 +13,30 @@ from .._aux import (
     get_posts_responses_bodies,
     since_date,
 )
-from ..accounts import Consumer
+from ..accounts import AccountRole, Admin, Consumer, Moderator
 from ..creators import Creator, CreatorsList
 from ..discord import DiscordMessage
+from ..exceptions import AlreadyLoggedIn, InvalidLogin, LoginError
 from ..files import File
 from ..posts import ELEMENTS_PER_PAGE, Post, PostsList
 from ..services import ServiceType
+from ..sessions import KemoSession
 
 if TYPE_CHECKING:
     from datetime import datetime
     from os import PathLike
 
-    from ..services import ServiceLike
-    from ..sessions import KemoSession
-    from ..tags import TagLike
     from ..posts import PostID
+    from ..services import ServiceLike
+    from ..tags import TagLike
+
+AccountType: TypeAlias = Union[Consumer, Moderator, Admin]
 
 MAX_POSTS_LIMIT: int = 1000
 "Arbitrary limit for posts to be queried with auxiliar functions."
 
 
-async def get_creators(kemo_session: "KemoSession") -> CreatorsList:
+async def get_creators(kemo_session: KemoSession) -> CreatorsList:
     """
     Gets all the creators.
 
@@ -66,7 +69,7 @@ async def get_posts(query: Optional[str]=None,
                     before: Optional["datetime"]=None,
                     since: Optional["datetime"]=None,
                     tags: Optional[list["TagLike"]]=None,
-                    kemo_session: "KemoSession") -> PostsList:
+                    kemo_session: KemoSession) -> PostsList:
     """
     Gets all posts that coincide with the given parameters.
 
@@ -121,7 +124,7 @@ async def get_posts(query: Optional[str]=None,
 
 async def get_post(service: "ServiceLike",
                    post_id: "PostID",
-                   kemo_session: "KemoSession") -> Optional[Post]:
+                   kemo_session: KemoSession) -> Optional[Post]:
     """
     Tries to fetch a post by its service and ID, automatically searching for its creator.
     
@@ -150,7 +153,7 @@ async def get_post(service: "ServiceLike",
 
 async def get_creator(service: "ServiceLike",
                       creator_id: str,
-                      kemo_session: "KemoSession") -> Optional[Creator]:
+                      kemo_session: KemoSession) -> Optional[Creator]:
     """
     Tries to retrieve a creator with the given ID and service.
 
@@ -193,7 +196,7 @@ async def get_creator_links(service: "ServiceLike", creator_id: str) -> Creators
     return links
 
 
-async def random_post(session: "KemoSession") -> Optional[Post]:
+async def random_post(session: KemoSession) -> Optional[Post]:
     """
     Tries to retrieve a random post from the site.
 
@@ -225,7 +228,7 @@ async def random_post(session: "KemoSession") -> Optional[Post]:
     return await add_session_to_post(Post.from_dict(**fields), session)
 
 
-async def get_file_hash(hash: str, kemo_session: "KemoSession") -> FileHashResult:
+async def get_file_hash(hash: str, kemo_session: KemoSession) -> FileHashResult:
     """
     Search a file by hash. Also tries to retrieve posts where such file is present.
 
@@ -279,7 +282,7 @@ async def get_file_hash(hash: str, kemo_session: "KemoSession") -> FileHashResul
     )
 
 
-async def get_api_version(kemo_session: "KemoSession") -> str:
+async def get_api_version(kemo_session: KemoSession) -> str:
     """
     Convenience function to get the last hash of the current API version.
 
@@ -295,15 +298,76 @@ async def get_api_version(kemo_session: "KemoSession") -> str:
     return await res.text()
 
 
+def _get__account_type_by_role(role: AccountRole) -> AccountType:
+    """
+    Gives an account class based on the role passed. If the type is not recognized,
+    :class:`.Consumer` will be used.
+    
+    :param role: The role name.
+    
+    :type role: :class:`.AccountRole`
+    
+    :return: Any of the possible account types. `i.e.` a :class:`.Consumer`, :class:`.Moderator`, :class:`.Admin`, etc.
+    :rtype: :type:`.AccountType`
+    """
+
+    match role:
+        case AccountRole.CONSUMER:
+            return Consumer
+
+        case AccountRole.MODERATOR:
+            return Moderator
+
+        case AccountRole.ADMINISTRATOR:
+            return Admin
+
+        case _:
+            return Consumer
+
+
 async def login(
         user: str,
         password: str,
-    ) -> Consumer:
+    ) -> AccountType:
     """
     An alias for logging an automatically deciding which account rank is returned.
+
+    :param user: The username to try to login with.
+    :param password: The password to try to login with.
+
+    :type user: :class:`str`
+    :type password: :class:`str`
+
+    :raises InvalidLogin: The login had incorrect data.
+    :raises AlreadyLoggedIn: The user is already logged in.
+    :raises LoginError: Another error ocurred.
+
+    :return: Any of the possible account types, already logged-in.
+    :rtype: :type:`.AccountType`
     """
 
-    return await Consumer.login(user, password)
+    session = KemoSession()
+    login_res = await session.post("/authentication/login", json=dict(username=user, password=password))
+    res_json = await login_res.json()
+
+    # invalid due to user errors
+    if login_res.status == 400:
+        session.close()
+        raise InvalidLogin(res_json.get("error", "The login is invalid due to user errors"))
+
+    # already logged in
+    if login_res.status == 409:
+        session.close()
+        raise AlreadyLoggedIn(res_json.get("error", "The user is already logged in"))
+
+    # another unknown error
+    if login_res.status != 200:
+        session.close()
+        raise LoginError(res_json.get("error", "An unexpected error ocurred during the login"))
+
+    res_json.update(session=session)
+    acc_type = _get__account_type_by_role(res_json.get("role", None))
+    return await acc_type.from_dict(**res_json)
 
 
 async def register(

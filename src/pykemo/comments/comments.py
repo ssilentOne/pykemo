@@ -61,7 +61,7 @@ class Comment:
         """
         Initializes a Comment instance from a response fields.
 
-        :return: An instace of an comment.
+        :return: An instace of a comment.
         :rtype: :class:`.Comment`
         """
 

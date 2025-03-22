@@ -36,7 +36,7 @@ class CommentRevision:
         """
         Initializes a CommentRevision instance from a response fields.
 
-        :return: An instace of an comment revision.
+        :return: An instace of a comment revision.
         :rtype: :class:`.CommentRevision`
         """
 

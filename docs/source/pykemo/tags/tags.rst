@@ -8,4 +8,4 @@ Tags
 
 .. autoclass:: pykemo.tags.tag.Tag
     :members:
-    :exclude-members: from_dict process_tag_response
+    :exclude-members: from_dict, process_tag_response

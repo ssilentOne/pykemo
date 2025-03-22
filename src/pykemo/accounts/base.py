@@ -3,6 +3,7 @@ Accounts abstract base module.
 """
 
 from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
 from datetime import datetime
 from types import TracebackType
 from typing import Literal, Optional, Self, TypeAlias, Union
@@ -23,7 +24,17 @@ _AccountFields: TypeAlias = Literal["id", "username", "created_at", "role"]
 AccountDict: TypeAlias = dict[_AccountFields, Union[int, str, None]]
 
 
-class _AccountBase(ABC):
+@dataclass(kw_only=True)
+class _AccountParams:
+    "The very basic initial parameters of an Account."
+
+    id: int
+    username: str
+    created_at: datetime = field(repr=False)
+    session: KemoSession = field(repr=False)
+
+
+class _AccountBase(ABC, _AccountParams):
     """
     .. warning:: `This is intended for internal purposes.` Use subclasses instead.
     """
@@ -191,19 +202,6 @@ class _AccountBase(ABC):
         elif register_res.status != 200:
             session.close()
             raise RegisterError((await register_res.json()).get("error", "An unexpected error ocurred in the registering process."))
-
-
-    @property
-    @abstractmethod
-    def session(self) -> KemoSession:
-        """
-        A wrapper for the underlying session.
-        
-        :return: The session itself.
-        :rtype: :class:`.KemoSession`
-        """
-
-        raise NotImplementedError
 
 
     @staticmethod

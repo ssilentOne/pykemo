@@ -3,16 +3,13 @@ Consumer account module.
 """
 
 from asyncio import gather
-from dataclasses import dataclass, field
-from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
 from .._aux import add_session_to_post
 from ..creators import Creator, CreatorsList
 from ..exceptions import PyKemoException
 from ..posts import Post, PostsList
-from ..sessions import KemoSession
-from .base import _AccountBase
+from .base import _AccountBase, _AccountParams
 from .role import AccountRole
 
 if TYPE_CHECKING:
@@ -20,39 +17,8 @@ if TYPE_CHECKING:
     from ..services import ServiceLike
 
 
-@dataclass(kw_only=True)
-class Consumer(_AccountBase):
-    """
-    A basic consumer account.
-
-    .. warning:: It is not recommended to use unless you know what you're doing. Methods like :meth:`.login()` are preferred as they automatically create a session internally.
-    
-    :param id: The account ID.
-    :param username: The name of the user's account.
-    :param created_at: When was the account created.
-    :param ks: The underlying session of the account context.
-
-    :type id: :class:`int`
-    :type username: :class:`str`
-    :type created_at: :class:`datetime.datetime`
-    :type ks: :class:`.KemoSession`
-    """
-
-    id: int
-    username: str
-    created_at: datetime = field(repr=False)
-    ks: KemoSession = field(repr=False)
-
-
-    @property
-    def session(self) -> "KemoSession":
-        return self.ks
-
-
-    @staticmethod
-    def role() -> AccountRole:
-        return AccountRole.CONSUMER
-
+class _ConsumerMixin(_AccountParams):
+    "A basic compound of all consumer level operations."
 
     async def change_password(self,
                               current_password: str,
@@ -221,3 +187,25 @@ class Consumer(_AccountBase):
         fields.update(creator=(await self.get_creator(service, creator_id)))
 
         return await add_session_to_post(Post.from_dict(**fields), self.session)
+
+
+class Consumer(_AccountBase, _ConsumerMixin):
+    """
+    A basic consumer account.
+
+    .. warning:: It is not recommended to use unless you know what you're doing. Methods like :meth:`.login()` are preferred as they automatically create a session internally.
+    
+    :param id: The account ID.
+    :param username: The name of the user's account.
+    :param created_at: When was the account created.
+    :param ks: The underlying session of the account context.
+
+    :type id: :class:`int`
+    :type username: :class:`str`
+    :type created_at: :class:`datetime.datetime`
+    :type ks: :class:`.KemoSession`
+    """
+
+    @staticmethod
+    def role() -> AccountRole:
+        return AccountRole.CONSUMER

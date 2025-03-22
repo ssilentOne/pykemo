@@ -7,5 +7,16 @@ with the Kemono API.
 Accounts
 --------
 
-.. autoclass:: pykemo.accounts.consumer.Consumer
+.. autoclass:: pykemo.accounts.cons.Consumer
     :members:
+    :inherited-members:
+
+
+.. autoclass:: pykemo.accounts.mod.Moderator
+    :members:
+    :inherited-members:
+
+
+.. autoclass:: pykemo.accounts.admin.Admin
+    :members:
+    :inherited-members:

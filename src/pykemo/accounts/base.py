@@ -48,11 +48,15 @@ class _AccountBase(ABC, _AccountParams):
         :rtype: :class:`.CommentRevision`
         """
 
+        ks_cand = fields.get("session", None)
+        if ks_cand is None:
+            ks_cand = KemoSession()
+
         return cls(
             id=fields.get("id"),
             username=fields.get("username"),
             created_at=datetime.strptime(fields.get("created_at"), MILI_DATE_FMT),
-            session=fields.get("session", KemoSession())
+            session=ks_cand
         )
 
 

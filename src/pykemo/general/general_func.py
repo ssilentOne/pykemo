@@ -389,6 +389,9 @@ async def save_posts(path: "PathLike",
     """
     Tries to save many posts in bulk.
 
+    .. warning:: The connection may close in between if it takes too long, but
+    it reconnects automatically.
+
     :param path: The path to be used to save all the contents of the posts.
     :param posts: The posts to be saved.
     :param force: Wether to overwrite existing files, defaults to ``True``

@@ -309,7 +309,10 @@ async def get_posts_responses_bodies(
     if max_posts is None:
         max_posts = page_stepping
 
-    n_pages = (max_posts // page_stepping) + 1 # one more for the surplus
+    n_pages = (max_posts // page_stepping)
+    if max_posts % page_stepping != 0:
+        # if not exact amount, use one more page
+        n_pages += 1
     for page in range(n_pages):
         page_coroutine = kemo_session.get(
             endpoint,

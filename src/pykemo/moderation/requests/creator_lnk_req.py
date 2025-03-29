@@ -80,7 +80,7 @@ class CreatorLinkRequest:
     def pending(self) -> bool:
         """
         Checks if the link request is in a PENDING status.
-        
+
         :return: Wether the link request is pending or not.
         :rtype: :class:`bool`
         """
@@ -91,9 +91,9 @@ class CreatorLinkRequest:
     def set_underlying_session(self, ks: "KemoSession") -> Self:
         """
         Quietly sets the session which the creator request uses for its requests.
-        
+
         :param session: The session instance.
-        
+
         :type session: :class:`.KemoSession`
 
         :return: The same instance of the request, for convenience.
@@ -107,14 +107,14 @@ class CreatorLinkRequest:
     async def _sucessful_lnk_check(self, endpoint: "UrlLike") -> bool:
         """
         Attemps to send a request and checks if the response is sucessful.
-        
+
         :param endpoint: The endpoint to send the request to.
-        
+
         :type endpoint: :class:`.UrlLike`
 
         :raises InsufficientPrivileges: If, somehow, the one invoking this operation isn`t at least
         a moderator.
-        
+
         :return: Wether the request was sucessful or not.
         :rtype: :class:`bool`
         """
@@ -139,7 +139,7 @@ class CreatorLinkRequest:
 
         :raises InsufficientPrivileges: If, somehow, the one invoking this operation isn`t at least
         a moderator.
-        
+
         :return: A boolean value, indicating wether it was sucessful in approving the
                  request or not.
         :rtype: :class:`bool`
@@ -156,7 +156,7 @@ class CreatorLinkRequest:
 
         :raises InsufficientPrivileges: If, somehow, the one invoking this operation isn`t at least
         a moderator.
-        
+
         :return: A boolean value, indicating wether it was sucessful in rejecting the
                  request or not.
         :rtype: :class:`bool`

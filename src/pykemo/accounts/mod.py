@@ -22,7 +22,7 @@ class _ModeratorMixin(_AccountParams):
 
         :raises InsufficientPrivileges: If, somehow, the one invoking this operation isn`t at least
         a moderator.
-        
+
         :return: A list of pending creator link requests, if any.
         :rtype: list[:class:`.CreatorLinkRequest`]
         """

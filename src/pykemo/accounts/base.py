@@ -45,7 +45,6 @@ class _AccountBase(ABC, _AccountParams):
         Initializes an Account instance from a response fields.
 
         :return: An instace of an account.
-        :rtype: :class:`.CommentRevision`
         """
 
         ks_cand = fields.get("session", None)

@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Optional, Self, TypeAlias
 
 from ...creators import Creator
+from ...exceptions import InsufficientPrivileges
 from .creator_lnk_status import CreatorLinkStatus
 
 if TYPE_CHECKING:
@@ -110,12 +111,20 @@ class CreatorLinkRequest:
         :param endpoint: The endpoint to send the request to.
         
         :type endpoint: :class:`.UrlLike`
+
+        :raises InsufficientPrivileges: If, somehow, the one invoking this operation isn`t at least
+        a moderator.
         
         :return: Wether the request was sucessful or not.
         :rtype: :class:`bool`
         """
 
         res = await self.__kemo_session.post(endpoint)
+
+        if res.status == 404:
+            raise InsufficientPrivileges((await res.json()).get(
+                "error","Insufficient privileges for this operation")
+            )
 
         if res.status != 200:
             return False
@@ -127,6 +136,9 @@ class CreatorLinkRequest:
     async def approve(self) -> bool:
         """
         Tries to approve the creator link request.
+
+        :raises InsufficientPrivileges: If, somehow, the one invoking this operation isn`t at least
+        a moderator.
         
         :return: A boolean value, indicating wether it was sucessful in approving the
                  request or not.
@@ -141,6 +153,9 @@ class CreatorLinkRequest:
     async def reject(self) -> bool:
         """
         Tries to reject the creator link request.
+
+        :raises InsufficientPrivileges: If, somehow, the one invoking this operation isn`t at least
+        a moderator.
         
         :return: A boolean value, indicating wether it was sucessful in rejecting the
                  request or not.

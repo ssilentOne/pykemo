@@ -7,6 +7,7 @@ from collections.abc import Coroutine
 from typing import Any
 
 from ..moderation import CreatorLinkRequest
+from ..exceptions import InsufficientPrivileges
 from .base import _AccountBase, _AccountParams
 from .cons import _ConsumerMixin
 from .role import AccountRole
@@ -18,24 +19,29 @@ class _ModeratorMixin(_AccountParams):
     async def creator_link_requests(self) -> list[CreatorLinkRequest]:
         """
         Fetches a list of creator link requests that have yet to be reviewed.
+
+        :raises InsufficientPrivileges: If, somehow, the one invoking this operation isn`t at least
+        a moderator.
         
         :return: A list of pending creator link requests, if any.
         :rtype: list[:class:`.CreatorLinkRequest`]
         """
 
         res = await self.session.get("/account/moderator/tasks/creator_links")
+        body = await res.json()
+
+        if res.status == 404:
+             raise InsufficientPrivileges(body.get("error", "Insufficient privileges for this operation"))
 
         if res.status != 200:
             return []
-
-        links = await res.json()
 
         async def add_session_to_lnk_request(
                     lnk_req_task: Coroutine[Any, Any, CreatorLinkRequest]) -> CreatorLinkRequest:
                 return (await lnk_req_task).set_underlying_session(self.session)
 
         link_tasks = []
-        for lnk_fields in links:
+        for lnk_fields in body:
             link_tasks.append(
                  add_session_to_lnk_request(CreatorLinkRequest.from_dict(**lnk_fields))
             )

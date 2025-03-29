@@ -6,11 +6,11 @@ from asyncio import gather
 from collections.abc import Coroutine
 from typing import Any
 
-from ..moderation import CreatorLinkRequest
-from ..exceptions import InsufficientPrivileges
-from .base import _AccountBase, _AccountParams
+from ...moderation import CreatorLinkRequest
+from ...exceptions import InsufficientPrivileges
+from ..base import _AccountBase, _AccountParams
 from .cons import _ConsumerMixin
-from .role import AccountRole
+from ..role import AccountRole
 
 
 class _ModeratorMixin(_AccountParams):
@@ -20,8 +20,7 @@ class _ModeratorMixin(_AccountParams):
         """
         Fetches a list of creator link requests that have yet to be reviewed.
 
-        :raises InsufficientPrivileges: If, somehow, the one invoking this operation isn`t at least
-        a moderator.
+        :raises InsufficientPrivileges: If, somehow, the one invoking this operation isn`t at least a moderator.
 
         :return: A list of pending creator link requests, if any.
         :rtype: list[:class:`.CreatorLinkRequest`]

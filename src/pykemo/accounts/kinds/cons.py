@@ -5,16 +5,16 @@ Consumer account module.
 from asyncio import gather
 from typing import TYPE_CHECKING, Optional
 
-from .._aux import add_session_to_post
-from ..creators import Creator, CreatorsList
-from ..exceptions import PyKemoException
-from ..posts import Post, PostsList
-from .base import _AccountBase, _AccountParams
-from .role import AccountRole
+from ..._aux import add_session_to_post
+from ...creators import Creator, CreatorsList
+from ...exceptions import PyKemoException
+from ...posts import Post, PostsList
+from ..base import _AccountBase, _AccountParams
+from ..role import AccountRole
 
 if TYPE_CHECKING:
-    from ..posts import PostID
-    from ..services import ServiceLike
+    from ...posts import PostID
+    from ...services import ServiceLike
 
 
 class _ConsumerMixin(_AccountParams):

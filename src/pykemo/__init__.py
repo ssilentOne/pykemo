@@ -2,7 +2,7 @@
 Main package.
 """
 
-__version__ = "0.6.2"
+__version__ = "0.7.0"
 
 from .creators import *
 from .files import *

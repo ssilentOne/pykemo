@@ -30,8 +30,8 @@ class _AdministratorMixin(_AccountParams):
         :type service: :type:`.ServiceLike`
         :type creator_id: :type:`.CreatorID`
 
-        :raises InsufficientPrivileges: If, somehow, the one invoking this operation isn`t at least
-        an administrator.
+        :raises InsufficientPrivileges: If, somehow, the one invoking this operation isn`t at
+                                        least an administrator.
 
         :return: A boolean value indicating if the operation was successful or not.
         :rtype: :class:`bool`
@@ -56,8 +56,7 @@ class _AdministratorMixin(_AccountParams):
         
         :type creator: :class:`.Creator`
 
-        :raises InsufficientPrivileges: If, somehow, the one invoking this operation isn`t at least
-                                        an administrator.
+        :raises InsufficientPrivileges: If, somehow, the one invoking this operation isn`t at least an administrator.
 
         :return: A boolean value indicating if the operation was successful or not.
         :rtype: :class:`bool`

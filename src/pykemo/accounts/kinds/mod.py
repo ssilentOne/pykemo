@@ -20,7 +20,8 @@ class _ModeratorMixin(_AccountParams):
         """
         Fetches a list of creator link requests that have yet to be reviewed.
 
-        :raises InsufficientPrivileges: If, somehow, the one invoking this operation isn`t at least a moderator.
+        :raises InsufficientPrivileges: If, somehow, the one invoking this operation isn`t at least
+                                        a moderator.
 
         :return: A list of pending creator link requests, if any.
         :rtype: list[:class:`.CreatorLinkRequest`]

@@ -113,7 +113,7 @@ class CreatorLinkRequest:
         :type endpoint: :class:`.UrlLike`
 
         :raises InsufficientPrivileges: If, somehow, the one invoking this operation isn`t at least
-        a moderator.
+                                        a moderator.
 
         :return: Wether the request was sucessful or not.
         :rtype: :class:`bool`
@@ -138,7 +138,7 @@ class CreatorLinkRequest:
         Tries to approve the creator link request.
 
         :raises InsufficientPrivileges: If, somehow, the one invoking this operation isn`t at least
-        a moderator.
+                                        a moderator.
 
         :return: A boolean value, indicating wether it was sucessful in approving the
                  request or not.
@@ -155,7 +155,7 @@ class CreatorLinkRequest:
         Tries to reject the creator link request.
 
         :raises InsufficientPrivileges: If, somehow, the one invoking this operation isn`t at least
-        a moderator.
+                                        a moderator.
 
         :return: A boolean value, indicating wether it was sucessful in rejecting the
                  request or not.

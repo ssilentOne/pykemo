@@ -48,3 +48,16 @@ The clearance rank a specific account has.
     .. autoattribute:: CONSUMER
     .. autoattribute:: MODERATOR
     .. autoattribute:: ADMINISTRATOR
+
+
+Creator Link Request Status
+---------------------------
+
+The current status of a creator link request.
+
+.. autoclass:: pykemo.moderation.requests.creator_lnk_status.CreatorLinkStatus
+    :members:
+    :show-inheritance:
+
+    .. autoattribute:: PENDING
+    .. autoattribute:: OTHER

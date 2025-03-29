@@ -170,3 +170,4 @@ Pykemo is a Python library that effectively functions as a binding to the
     Posts <pykemo/posts/posts.rst>
     Sessions <pykemo/sessions/sessions.rst>
     Tags <pykemo/tags/tags.rst>
+    Creator Links Requests <pykemo/moderation/creator_links.rst>

@@ -2,6 +2,11 @@
 Moderator account module.
 """
 
+from asyncio import gather
+from collections.abc import Coroutine
+from typing import Any
+
+from ..moderation import CreatorLinkRequest
 from .base import _AccountBase, _AccountParams
 from .cons import _ConsumerMixin
 from .role import AccountRole
@@ -9,6 +14,33 @@ from .role import AccountRole
 
 class _ModeratorMixin(_AccountParams):
     "A basic compound of all moderator level operations."
+
+    async def creator_link_requests(self) -> list[CreatorLinkRequest]:
+        """
+        Fetches a list of creator link requests that have yet to be reviewed.
+        
+        :return: A list of pending creator link requests, if any.
+        :rtype: list[:class:`.CreatorLinkRequest`]
+        """
+
+        res = await self.session.get("/account/moderator/tasks/creator_links")
+
+        if res.status != 200:
+            return []
+
+        links = await res.json()
+
+        async def add_session_to_lnk_request(
+                    lnk_req_task: Coroutine[Any, Any, CreatorLinkRequest]) -> CreatorLinkRequest:
+                return (await lnk_req_task).set_underlying_session(self.session)
+
+        link_tasks = []
+        for lnk_fields in links:
+            link_tasks.append(
+                 add_session_to_lnk_request(CreatorLinkRequest.from_dict(**lnk_fields))
+            )
+
+        return await gather(*link_tasks)
 
 
 class Moderator(_AccountBase, _ConsumerMixin, _ModeratorMixin):

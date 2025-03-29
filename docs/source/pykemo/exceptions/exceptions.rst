@@ -17,6 +17,10 @@ Roles
     :members:
 
 
+.. autoexception:: pykemo.exceptions.roles.InsufficientPrivileges
+    :members:
+
+
 Services
 --------
 

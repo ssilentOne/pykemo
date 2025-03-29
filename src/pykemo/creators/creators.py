@@ -34,6 +34,7 @@ CreatorsList: TypeAlias = list["Creator"]
 _CreatorFields: TypeAlias = Literal["id", "name", "service", "indexed", "updated",
                                     "public_id", "favorited"]
 CreatorDict: TypeAlias = dict[_CreatorFields, Union[str, int, None]]
+CreatorID: TypeAlias = str
 AnnouncementsList: TypeAlias = list[Announcement]
 FancardsList: TypeAlias = list[Fancard]
 
@@ -53,7 +54,7 @@ class Creator:
     :param favorited: A integer displaying how many have favorited this creator.
     :param relation_id: The relation ID of this creator.
 
-    :type id: :class:`str`
+    :type id: :type:`.CreatorID`
     :type name: Optional[:class:`str`]
     :type service: :class:`.ServiceType`
     :type indexed: :class:`datetime.datetime`
@@ -63,7 +64,7 @@ class Creator:
     :type relation_id: Optional[:class:`int`]
     """
 
-    id: str
+    id: CreatorID
     name: Optional[str]
     service: ServiceType
     indexed: datetime = field(repr=False)

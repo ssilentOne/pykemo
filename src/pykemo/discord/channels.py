@@ -99,7 +99,7 @@ class DiscordChannel:
         :type session: :class:`.KemoSession`
 
         :return: The same instance of the channel, for convenience.
-        :rtype: :class:`.Creator`
+        :rtype: :class:`.DiscordChannel`
         """
 
         self.__kemo_session = ks

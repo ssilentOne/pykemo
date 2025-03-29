@@ -104,7 +104,7 @@ class DiscordMessage:
         :type session: :class:`.KemoSession`
 
         :return: The same instance of the message, for convenience.
-        :rtype: :class:`.Creator`
+        :rtype: :class:`.DiscordMessage`
         """
 
         self.__kemo_session = ks

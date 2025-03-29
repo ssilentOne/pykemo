@@ -251,7 +251,7 @@ class Post:
         :type session: :class:`.KemoSession`
 
         :return: The same instance of the post, for convenience.
-        :rtype: :class:`.Creator`
+        :rtype: :class:`.Post`
         """
 
         self.__kemo_session = ks

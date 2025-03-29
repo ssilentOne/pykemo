@@ -14,28 +14,28 @@ class ServiceType(StrEnum):
     "Service enum."
 
     PATREON = "patreon"
-    "A [Patreon](https://www.patreon.com/) service type."
+    "A `Patreon <https://www.patreon.com/>`_ service type."
 
     FANBOX = "fanbox"
-    "A [Fanbox](https://www.fanbox.cc/) service type."
+    "A `Fanbox <https://www.fanbox.cc/>`_ service type."
 
     GUMROAD = "gumroad"
-    "A [Gumroad](https://gumroad.com/) service type."
+    "A `Gumroad <https://gumroad.com/>`_ service type."
 
     SUSCRIBE_STAR = "subscribestar"
-    "A [SubscribeStar](https://www.subscribestar.com/) service type."
+    "A `SubscribeStar <https://www.subscribestar.com/>`_ service type."
 
     FANTIA = "fantia"
-    "A [Fantia](https://fantia.jp/) service type."
+    "A `Fantia <https://fantia.jp/>`_ service type."
 
     BOOSTY = "boosty"
-    "A [Boosty](https://boosty.to) service type."
+    "A `Boosty <https://boosty.to>`_ service type."
 
     AFDIAN = "afdian"
-    "A [Afdian](https://afdian.com/) service type."
+    "A `Afdian <https://afdian.com/>`_ service type."
 
     DISCORD = "discord"
-    "A [Discord](https://discord.com/) service type."
+    "A `Discord <https://discord.com/>`_ service type."
 
     DLSITE = "dlsite"
-    "A [DLSite](https://www.dlsite.com/) service type."
+    "A `DLSite <https://www.dlsite.com/>`_ service type."

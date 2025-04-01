@@ -53,19 +53,6 @@ def sanitize_data_url(file_dict: "FileDict") -> "FileDict":
     return file_dict
 
 
-def process_fmt(fmt: Optional[str], /) -> str:
-    """
-    :param fmt: The format to be processed.
-
-    :type fmt: Optional[:class:`str`]
-
-    :return: Leaves `fmt` as-is, unless it's ``None``, then returns a default value instead.
-    :rtype: :class:`str`
-    """
-
-    return (fmt if fmt is not None else DEFAULT_DATE_FMT)
-
-
 def process_date(date: DateOrFmt, fmt: Optional[str]) -> datetime:
     """
     Process the date if it's a string, or use it as-is if it is already a datetime object.
@@ -80,7 +67,7 @@ def process_date(date: DateOrFmt, fmt: Optional[str]) -> datetime:
     """
 
     if isinstance(date, str):
-        return datetime.strptime(date, process_fmt(fmt))
+        return datetime.strptime(date, (fmt if fmt is not None else DEFAULT_DATE_FMT))
 
     return date
 

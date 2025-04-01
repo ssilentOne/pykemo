@@ -53,7 +53,7 @@ def sanitize_data_url(file_dict: "FileDict") -> "FileDict":
     return file_dict
 
 
-def process_date(date: DateOrFmt, fmt: Optional[str]) -> datetime:
+def process_date(date: DateOrFmt, fmt: Optional[str]=None) -> datetime:
     """
     Process the date if it's a string, or use it as-is if it is already a datetime object.
 

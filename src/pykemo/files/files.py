@@ -152,12 +152,12 @@ class File:
         """
         Quietly sets the session which the post uses for its requests.
         
-        :param session: The session instance.
+        :param ks: The session instance.
         
-        :type session: :class:`.KemoSession`
+        :type ks: :class:`.KemoSession`
 
-        :return: The same instance of the post, for convenience.
-        :rtype: :class:`.Creator`
+        :return: The same instance of the file, for convenience.
+        :rtype: :class:`.File`
         """
 
         self.__kemo_session = ks
@@ -259,7 +259,7 @@ class File:
         :param path: The path in which to save the file.
         :param force: If another file is found, overwrite it.
         :param verbose: Wether to track progress.
-        :param show_order: If ``verbose``==``True``, then this defines in which order the progress bar is showed., defaults to 1.
+        :param show_order: If ``verbose==True``, then this defines in which order the progress bar is showed., defaults to 1.
         :param chunk_size: The size `(in bytes)` of the chunks to download at a
                            time (usually a power of 2).
 

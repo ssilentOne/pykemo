@@ -9,7 +9,7 @@
 <img alt="pyk_logo.png" align="left" src="media/img/pykemo_logo.png" height=128 width=128 />
 
 [![Latest tag](https://img.shields.io/github/v/tag/ssilentOne/pykemo?label=release)](https://github.com/ssilentOne/pykemo/releases/latest)
-[![Docs](https://readthedocs.org/projects/pykemo/badge/?version=latest)](https://pykemo.readthedocs.io/en/latest/?badge=latest)
+[![Docs](https://readthedocs.org/projects/pykemo/badge/?version=stable)](https://pykemo.readthedocs.io/en/stable/?badge=stable)
 ![linter](https://github.com/ssilentOne/pykemo/actions/workflows/linter.yml/badge.svg)
 ![Tests](https://github.com/ssilentOne/pykemo/actions/workflows/tests.yml/badge.svg)
 ![stars](https://img.shields.io/github/stars/ssilentOne/pykemo?label=Stars&style=social)
@@ -168,7 +168,8 @@ The [dependencies](./requirements.txt) are as follows:
 
 # Documentation
 
-All the docs for every version of pykemo are [here](https://pykemo.readthedocs.io/en/latest/).
+The docs for the stable version are [here](https://pykemo.readthedocs.io/en/stable/), while the
+nightly changes are [here](https://pykemo.readthedocs.io/en/latest/).
 
 <hr style="height:3px; width:50%" />
 

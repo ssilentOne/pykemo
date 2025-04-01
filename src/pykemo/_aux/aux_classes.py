@@ -38,4 +38,4 @@ class FileHashResult:
         :rtype: :class:`.FileHashResult`
         """
 
-        return cls(None, [], [])
+        return cls(file=None, posts=[], disc=[])

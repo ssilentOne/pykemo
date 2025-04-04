@@ -209,7 +209,7 @@ async def add_session_to_tag(
 
 def query_params(query: Optional[str]=None,
                  offset: Optional[int]=None,
-                 stepping: int=0,
+                 stepping: int=DEFAULT_PAGE_SIZE,
                  tags: Optional[list["TagLike"]]=None) -> ParamsTuples:
     """
     .. warning:: `(for internal purposes)`

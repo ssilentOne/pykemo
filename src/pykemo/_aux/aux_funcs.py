@@ -140,7 +140,7 @@ def sanitize_str(src: str,
     :rtype: :class:`str`
     """
 
-    cpy = src
+    cpy = src[:]
     for bad_char in forbidden:
         cpy = cpy.replace(bad_char, target)
 
@@ -214,7 +214,7 @@ def query_params(query: Optional[str]=None,
     """
     .. warning:: `(for internal purposes)`
     Formats a parameters list to send with a response in messages queries.
-    Such list has tuples of strings isntead of a dictionary, to allow for duplicated keys.
+    Such list has tuples of strings instead of a dictionary, to allow for duplicated keys.
 
     :param query: The search query string of the dict.
     :param offset: The search offset int of the dict.

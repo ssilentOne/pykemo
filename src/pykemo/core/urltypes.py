@@ -23,3 +23,25 @@ class UrlType(StrEnum):
 
     DISCORD = "https://cdn.discordapp.com"
     "A special URL specifically for Discord assets."
+
+
+    def is_data(self) -> bool:
+        """
+        Checks if this instance is of the DATA type.
+        
+        :return: A boolean value describing if the instance is of the expected type or not.
+        :rtype: :class:`bool`
+        """
+
+        return self == __class__.DATA
+
+
+    def is_api(self) -> bool:
+        """
+        Checks if this instance is of the API type.
+        
+        :return: A boolean value describing if the instance is of the expected type or not.
+        :rtype: :class:`bool`
+        """
+
+        return self == __class__.API

@@ -1,24 +1,24 @@
 """
 Custom Requests module.
 """
-from typing import TYPE_CHECKING, TypeAlias, Union
+from typing import TYPE_CHECKING, TypeAlias
 
 from aiohttp import ClientSession
 
-from ._request_types import HTTPRequestMethod, MethodLiteral
 from .urltypes import UrlType
+from .api_version import APIVersion
 
 if TYPE_CHECKING:
     from os import PathLike
 
     from aiohttp import ClientResponse
 
+    from ._request_types import MethodLike
+
 UrlLike: TypeAlias = "PathLike"
 """
 A 'URL-like' is a string of the style `/a/b/c/d`.
 """
-
-MethodLike: TypeAlias = Union[HTTPRequestMethod, MethodLiteral]
 
 MAX_RETRIES: int = 10
 "Max retries for a request."
@@ -33,10 +33,11 @@ ADAPTER_PREFIX: UrlLike = "https://"
 "A prefix for URLs that trigger the custom HTTP adapter."
 
 
-async def request(method: MethodLike,
+async def request(method: "MethodLike",
                   endpoint: UrlLike,
                   *,
                   base_url: UrlType=UrlType.API,
+                  api_version: APIVersion=APIVersion.V1,
                   session: ClientSession,
                   **kwargs) -> "ClientResponse":
     """
@@ -45,25 +46,32 @@ async def request(method: MethodLike,
     :param method: The HTTP method to use.
     :param endpoint: The endpoint to map to.
     :param base_url: The root URL to use.
+    :param api_version: The internal version of the API to use for the endpoints, defaults to :attr:`APIVersion.V1`
     :param session: The session to use. This one is assumed to still be open and must be closed some
                     time afterwards.
 
     :type method: :type:`.MethodLike`
     :type endpoint: :type:`.UrlLike`
     :type base_url: Optional[:class:`.UrlType`]
+    :type api_version: Optional[:class:`.APIVersion`]
     :type session: `ClientSession <https://docs.aiohttp.org/en/v3.11.13/client_reference.html#aiohttp.ClientSession>`_
 
     :return: The HTTP response.
     :rtype: `ClientResponse <https://docs.aiohttp.org/en/v3.11.13/client_reference.html#aiohttp.ClientResponse>`_
     """
 
-    return await session.request(method=method, url=f"{base_url}{endpoint}", **kwargs)
+    return await session.request(
+        method=method,
+        url=f"{base_url}/{api_version}{endpoint}",
+        **kwargs
+    )
 
 
 async def get(endpoint: UrlLike,
               *,
               params=None,
               base_url: UrlType=UrlType.API,
+              api_version: APIVersion=APIVersion.V1,
               session: ClientSession,
               **kwargs) -> "ClientResponse":
     """
@@ -72,28 +80,30 @@ async def get(endpoint: UrlLike,
     :param endpoint: The endpoint to map to.
     :param params: A ``dict`` with the parameters of the request. Usually of type ``dict[str, int | str | None]``
     :param base_url: The root URL to use.
+    :param api_version: The internal version of the API to use for the endpoints, defaults to :attr:`APIVersion.V1`
     :param session: The session to use.
 
     :type endpoint: :type:`.UrlLike`
     :type params: Optional[:class:`dict`]
     :type base_url: Optional[:class:`.UrlType`]
+    :type api_version: Optional[:class:`.APIVersion`]
     :type session: `ClientSession <https://docs.aiohttp.org/en/v3.11.13/client_reference.html#aiohttp.ClientSession>`_
 
     :return: The HTTP response.
     :rtype: `ClientResponse <https://docs.aiohttp.org/en/v3.11.13/client_reference.html#aiohttp.ClientResponse>`_
     """
 
-    return await request(HTTPRequestMethod.GET,
-                         endpoint,
-                         params=params,
-                         base_url=base_url,
-                         session=session,
-                         **kwargs)
+    return await session.get(
+        url=f"{base_url}/{api_version}{endpoint}",
+        params=params,
+        **kwargs
+    )
 
 
 async def options(endpoint: UrlLike,
                   *,
                   base_url: UrlType=UrlType.API,
+                  api_version: APIVersion=APIVersion.V1,
                   session: ClientSession,
                   **kwargs) -> "ClientResponse":
     """
@@ -101,22 +111,28 @@ async def options(endpoint: UrlLike,
     
     :param endpoint: The endpoint to map to.
     :param base_url: The root URL to use.
+    :param api_version: The internal version of the API to use for the endpoints, defaults to :attr:`APIVersion.V1`
     :param session: The session to use.
 
     :type endpoint: :type:`.UrlLike`
     :type base_url: Optional[:class:`.UrlType`]
+    :type api_version: Optional[:class:`.APIVersion`]
     :type session: `ClientSession <https://docs.aiohttp.org/en/v3.11.13/client_reference.html#aiohttp.ClientSession>`_
 
     :return: The HTTP response.
     :rtype: `ClientResponse <https://docs.aiohttp.org/en/v3.11.13/client_reference.html#aiohttp.ClientResponse>`_
     """
 
-    return await request(HTTPRequestMethod.OPTIONS, endpoint, base_url=base_url, session=session, **kwargs)
+    return await session.options(
+        url=f"{base_url}/{api_version}{endpoint}",
+        **kwargs
+    )
 
 
 async def head(endpoint: UrlLike,
                *,
                base_url: UrlType=UrlType.API,
+               api_version: APIVersion=APIVersion.V1,
                session: ClientSession,
                **kwargs) -> "ClientResponse":
     """
@@ -124,17 +140,22 @@ async def head(endpoint: UrlLike,
     
     :param endpoint: The endpoint to map to.
     :param base_url: The root URL to use.
+    :param api_version: The internal version of the API to use for the endpoints, defaults to :attr:`APIVersion.V1`
     :param session: The session to use.
 
     :type endpoint: :type:`.UrlLike`
     :type base_url: Optional[:class:`.UrlType`]
+    :type api_version: Optional[:class:`.APIVersion`]
     :type session: `ClientSession <https://docs.aiohttp.org/en/v3.11.13/client_reference.html#aiohttp.ClientSession>`_
 
     :return: The HTTP response.
     :rtype: `ClientResponse <https://docs.aiohttp.org/en/v3.11.13/client_reference.html#aiohttp.ClientResponse>`_
     """
 
-    return await request(HTTPRequestMethod.HEAD, endpoint, base_url=base_url, session=session, **kwargs)
+    return await session.head(
+        url=f"{base_url}/{api_version}{endpoint}",
+        **kwargs
+    )
 
 
 async def post(endpoint: UrlLike,
@@ -142,101 +163,122 @@ async def post(endpoint: UrlLike,
                data=None,
                json=None,
                base_url: UrlType=UrlType.API,
+               api_version: APIVersion=APIVersion.V1,
                session: ClientSession,
                **kwargs) -> "ClientResponse":
     """
     A wrap for `aiohttp.ClientSession.post() <https://docs.aiohttp.org/en/v3.11.13/client_reference.html#aiohttp.ClientSession.post>`_.
-    
+
+    .. warning:: ``data`` and ``json`` cannot be used both at once.
+
     :param endpoint: The endpoint to map to.
-    :param data: Dictionary, list of file-like object to send in the body of the request.
-    :param json: JSON-like to send in the body of the request.
+    :param data: Dictionary, list of file-like object to send in the body of the request, defaults to ``None``
+    :param json: JSON-like to send in the body of the request, defaults to ``None``
     :param base_url: The root URL to use.
+    :param api_version: The internal version of the API to use for the endpoints, defaults to :attr:`APIVersion.V1`
     :param session: The session to use.
 
     :type endpoint: :type:`.UrlLike`
     :type data: Optional[:class:`Any`]
     :type json: Optional[:class:`dict`]
     :type base_url: Optional[:class:`.UrlType`]
+    :type api_version: Optional[:class:`.APIVersion`]
     :type session: `ClientSession <https://docs.aiohttp.org/en/v3.11.13/client_reference.html#aiohttp.ClientSession>`_
 
     :return: The HTTP response.
     :rtype: `ClientResponse <https://docs.aiohttp.org/en/v3.11.13/client_reference.html#aiohttp.ClientResponse>`_
     """
 
-    return await request(HTTPRequestMethod.POST,
-                         endpoint,
-                         data=data,
-                         json=json,
-                         base_url=base_url,
-                         session=session,
-                         **kwargs)
+    return await session.post(
+        url=f"{base_url}/{api_version}{endpoint}",
+        data=data,
+        json=json,
+        **kwargs
+    )
 
 
 async def put(endpoint: UrlLike,
               *,
               data=None,
+              json=None,
               base_url: UrlType=UrlType.API,
+              api_version: APIVersion=APIVersion.V1,
               session: ClientSession,
               **kwargs) -> "ClientResponse":
     """
     A wrap for `aiohttp.ClientSession.put() <https://docs.aiohttp.org/en/v3.11.13/client_reference.html#aiohttp.ClientSession.put>`_.
-    
+
+    .. warning:: ``data`` and ``json`` cannot be used both at once.
+
     :param endpoint: The endpoint to map to.
-    :param data: Dictionary, list of file-like object to send in the body of the request.
+    :param data: Dictionary, list of file-like object to send in the body of the request, defaults to ``None``
+    :param json: JSON-like to send in the body of the request, defaults to ``None``.
     :param base_url: The root URL to use.
+    :param api_version: The internal version of the API to use for the endpoints, defaults to :attr:`APIVersion.V1`
     :param session: The session to use.
 
     :type endpoint: :type:`.UrlLike`
     :type data: Optional[:class:`Any`]
+    :type json: Optional[:class:`dict`]
     :type base_url: Optional[:class:`.UrlType`]
+    :type api_version: Optional[:class:`.APIVersion`]
     :type session: `ClientSession <https://docs.aiohttp.org/en/v3.11.13/client_reference.html#aiohttp.ClientSession>`_
 
     :return: The HTTP response.
     :rtype: `ClientResponse <https://docs.aiohttp.org/en/v3.11.13/client_reference.html#aiohttp.ClientResponse>`_
     """
 
-    return await request(HTTPRequestMethod.PUT,
-                         endpoint,
-                         data=data,
-                         base_url=base_url,
-                         session=session,
-                         **kwargs)
+    return await session.put(
+        url=f"{base_url}/{api_version}{endpoint}",
+        data=data,
+        json=json
+        **kwargs
+    )
 
 
 async def patch(endpoint: UrlLike,
                 *,
                 data=None,
+                json=None,
                 base_url: UrlType=UrlType.API,
+                api_version: APIVersion=APIVersion.V1,
                 session: ClientSession,
                 **kwargs) -> "ClientResponse":
     """
     A wrap for `aiohttp.ClientSession.patch() <https://docs.aiohttp.org/en/v3.11.13/client_reference.html#aiohttp.ClientSession.patch>`_.
-    
+
+    .. warning:: ``data`` and ``json`` cannot be used both at once.
+
     :param endpoint: The endpoint to map to.
-    :param data: Dictionary, list of file-like object to send in the body of the request.
+    :param data: Dictionary, list of file-like object to send in the body of the request, defaults to ``None``
+    :param json: JSON-like to send in the body of the request, defaults to ``None``.
     :param base_url: The root URL to use.
+    :param api_version: The internal version of the API to use for the endpoints, defaults to :attr:`APIVersion.V1`
     :param session: The session to use.
 
     :type endpoint: :type:`.UrlLike`
     :type data: Optional[:class:`Any`]
+    :type json: Optional[:class:`dict`]
     :type base_url: Optional[:class:`.UrlType`]
+    :type api_version: Optional[:class:`.APIVersion`]
     :type session: `ClientSession <https://docs.aiohttp.org/en/v3.11.13/client_reference.html#aiohttp.ClientSession>`_
 
     :return: The HTTP response.
     :rtype: `ClientResponse <https://docs.aiohttp.org/en/v3.11.13/client_reference.html#aiohttp.ClientResponse>`_
     """
 
-    return await request(HTTPRequestMethod.PATCH,
-                         endpoint,
-                         data=data,
-                         base_url=base_url,
-                         session=session,
-                         **kwargs)
+    return await session.patch(
+        url=f"{base_url}/{api_version}{endpoint}",
+        data=data,
+        json=json
+        **kwargs
+    )
 
 
 async def delete(endpoint: UrlLike,
                  *,
                  base_url: UrlType=UrlType.API,
+                 api_version: APIVersion=APIVersion.V1,
                  session: ClientSession,
                  **kwargs) -> "ClientResponse":
     """
@@ -244,14 +286,19 @@ async def delete(endpoint: UrlLike,
     
     :param endpoint: The endpoint to map to.
     :param base_url: The root URL to use.
+    :param api_version: The internal version of the API to use for the endpoints, defaults to :attr:`APIVersion.V1`
     :param session: The session to use.
 
     :type endpoint: :type:`.UrlLike`
     :type base_url: Optional[:class:`.UrlType`]
+    :type api_version: Optional[:class:`.APIVersion`]
     :type session: `ClientSession <https://docs.aiohttp.org/en/v3.11.13/client_reference.html#aiohttp.ClientSession>`_
 
     :return: The HTTP response.
     :rtype: `ClientResponse <https://docs.aiohttp.org/en/v3.11.13/client_reference.html#aiohttp.ClientResponse>`_
     """
 
-    return await request(HTTPRequestMethod.DELETE, endpoint, base_url=base_url, session=session, **kwargs)
+    return await session.delete(
+        url=f"{base_url}/{api_version}{endpoint}",
+        **kwargs
+    )

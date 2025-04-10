@@ -18,7 +18,7 @@ class UrlType(StrEnum):
     DATA = "https://c{i}.kemono.su"
     "The URL for the backend that stores assets."
 
-    API = "https://kemono.su/api/v1"
+    API = "https://kemono.su/api"
     "The URL entrypoint for the Kemono API."
 
     DISCORD = "https://cdn.discordapp.com"

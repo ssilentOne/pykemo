@@ -33,7 +33,7 @@ class File:
                  name: "PathLike",
                  path: "PathLike",
                  content_type: Optional[str]=None,
-                 url_source: "UrlLike"=UrlType.DATA,
+                 url_source: UrlType=UrlType.DATA,
                  server: int=3) -> None:
         """
         Initializes a File. It may not have downloaded content yet, and merely be a
@@ -50,7 +50,7 @@ class File:
         :type name: :class:`PathLike`
         :type path: :class:`PathLike`
         :type content_type: Optional[:class:`str`]
-        :type url_source: Optional[:type:`.UrlLike`]
+        :type url_source: Optional[:class:`.UrlType`]
         :type server: :class:`int`
         """
 
@@ -58,13 +58,13 @@ class File:
         self._rel_path: "UrlLike" = path
 
         self._content_type: Optional[str] = content_type
-        self._url_root: "UrlLike" = url_source
+        self._url_root: "UrlLike" = url_source.value
         self._server: int = server
 
         self.__kemo_session: Optional[KemoSession] = None
 
-        if self._is_data(self._url_root):
-            self._url_root = self._url_root.format(i=self._server)
+        if url_source.is_data():
+            self._url_root = url_source.value.format(i=self._server)
 
 
 
@@ -99,23 +99,6 @@ class File:
         """
 
         return f"<File '{self.name}' in '{self._rel_path}'>"
-
-
-    @staticmethod
-    def _is_data(url: "UrlLike") -> bool:
-        """
-        .. warning:: `(for internal purposes)`
-        Checks if the URL is of the DATA url type.
-
-        :param url: The URL to evaluate.
-        
-        :type url: :type:`.UrlLike`
-
-        :returns: The result of checking if the URL is of type :attr:`.UrlType.DATA`
-        :rtype: :class:`bool`
-        """
-
-        return url == UrlType.DATA
 
 
     @property
@@ -279,7 +262,7 @@ class File:
             path.parent.mkdir(parents=True, exist_ok=True)
         elif path.exists() and not force:
             return False
-        
+
         response = await self.__kemo_session.get(self._rel_path,
                                                  base_url=self._url_root,
                                                  api_version=None)

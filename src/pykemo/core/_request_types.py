@@ -3,10 +3,10 @@ HTTP requests types.
 """
 
 from enum import StrEnum
-from typing import TypeAlias, Literal
+from typing import TypeAlias, Literal, Union
 
 MethodLiteral: TypeAlias = Literal["get", "options", "head", "post", "put", "patch", "delete"]
-
+MethodLike: TypeAlias = Union["HTTPRequestMethod", MethodLiteral]
 
 class HTTPRequestMethod(StrEnum):
     "HTTP Request Type."

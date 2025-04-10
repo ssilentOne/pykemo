@@ -19,18 +19,6 @@ UrlLike: TypeAlias = StrOrURL
 A 'URL-like' is a string of the style `/a/b/c/d`.
 """
 
-MAX_RETRIES: int = 10
-"Max retries for a request."
-
-BACKOFF_FACTOR: float = 0.1
-"The backoff factor for calculating delays."
-
-FORCELIST: list[int] = [429]
-"A list of statues codes to be wary of. These will trigger a retry."
-
-ADAPTER_PREFIX: UrlLike = "https://"
-"A prefix for URLs that trigger the custom HTTP adapter."
-
 MOST_COMMON_DATA_SV: int = 3
 "The number of the default server to use for DATA URL type."
 

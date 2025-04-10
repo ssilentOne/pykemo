@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Optional, Self, TypeAlias
 from aiohttp import ClientSession
 
 from ..core import (
+    MOST_COMMON_DATA_SV,
     APIVersion,
     UrlType,
     delete,
@@ -91,6 +92,7 @@ class KemoSession:
                       *,
                       base_url: UrlType=UrlType.API,
                       api_version: Optional[APIVersion]=APIVersion.V1,
+                      data_sv: int=MOST_COMMON_DATA_SV,
                       **kwargs) -> "ClientResponse":
         """
         Overcharges the request to include the session cookie.
@@ -99,11 +101,13 @@ class KemoSession:
         :param endpoint: The endpoint to map to.
         :param base_url: The root URL to use.
         :param api_version: The internal version of the API to use for the endpoints, defaults to :attr:`APIVersion.V1`
+        :param data_sv: The server number to format the base URL with, in case it is of type :attr:`.UrlType.DATA`
 
         :type method: :class:`str`
         :type endpoint: :type:`.UrlLike`
         :type base_url: Optional[:class:`.UrlType`]
         :type api_version: Optional[:class:`.APIVersion`]
+        :type data_sv: :class:`int`, optional
 
         :return: The HTTP response.
         :rtype: `ClientResponse <https://docs.aiohttp.org/en/v3.11.13/client_reference.html#aiohttp.ClientResponse>`_
@@ -113,6 +117,7 @@ class KemoSession:
                              endpoint,
                              base_url=base_url,
                              api_version=api_version,
+                             data_sv=data_sv,
                              session=self.__aio_session,
                              **kwargs)
 
@@ -123,6 +128,7 @@ class KemoSession:
                   params=None,
                   base_url: UrlType=UrlType.API,
                   api_version: Optional[APIVersion]=APIVersion.V1,
+                  data_sv: int=MOST_COMMON_DATA_SV,
                   **kwargs) -> "ClientResponse":
         """
         Overcharges a GET request.
@@ -131,11 +137,13 @@ class KemoSession:
         :param params: A ``dict`` with the parameters of the request. Usually of type ``dict[str, int | str | None]``
         :param base_url: The root URL to use.
         :param api_version: The internal version of the API to use for the endpoints, defaults to :attr:`APIVersion.V1`
+        :param data_sv: The server number to format the base URL with, in case it is of type :attr:`.UrlType.DATA`
 
         :type endpoint: :type:`.UrlLike`
         :type params: Optional[:class:`dict`]
         :type base_url: Optional[:class:`.UrlType`]
         :type api_version: Optional[:class:`.APIVersion`]
+        :type data_sv: :class:`int`, optional
 
         :return: The HTTP response.
         :rtype: `ClientResponse <https://docs.aiohttp.org/en/v3.11.13/client_reference.html#aiohttp.ClientResponse>`_
@@ -145,6 +153,7 @@ class KemoSession:
                          params=params,
                          base_url=base_url,
                          api_version=api_version,
+                         data_sv=data_sv,
                          session=self.__aio_session,
                          **kwargs)
 
@@ -154,6 +163,7 @@ class KemoSession:
                       *,
                       base_url: UrlType=UrlType.API,
                       api_version: Optional[APIVersion]=APIVersion.V1,
+                      data_sv: int=MOST_COMMON_DATA_SV,
                       **kwargs) -> "ClientResponse":
         """
         Overcharges an OPTIONS request.
@@ -161,10 +171,12 @@ class KemoSession:
         :param endpoint: The endpoint to map to.
         :param base_url: The root URL to use.
         :param api_version: The internal version of the API to use for the endpoints, defaults to :attr:`APIVersion.V1`
+        :param data_sv: The server number to format the base URL with, in case it is of type :attr:`.UrlType.DATA`
 
         :type endpoint: :type:`.UrlLike`
         :type base_url: Optional[:class:`.UrlType`]
         :type api_version: Optional[:class:`.APIVersion`]
+        :type data_sv: :class:`int`, optional
 
         :return: The HTTP response.
         :rtype: `ClientResponse <https://docs.aiohttp.org/en/v3.11.13/client_reference.html#aiohttp.ClientResponse>`_
@@ -173,6 +185,7 @@ class KemoSession:
         return await options(endpoint,
                              base_url=base_url,
                              api_version=api_version,
+                             data_sv=data_sv,
                              session=self.__aio_session,
                              **kwargs)
 
@@ -182,6 +195,7 @@ class KemoSession:
                    *,
                    base_url: UrlType=UrlType.API,
                    api_version: Optional[APIVersion]=APIVersion.V1,
+                   data_sv: int=MOST_COMMON_DATA_SV,
                    **kwargs) -> "ClientResponse":
         """
         Overcharges a HEAD request.
@@ -189,10 +203,12 @@ class KemoSession:
         :param endpoint: The endpoint to map to.
         :param base_url: The root URL to use.
         :param api_version: The internal version of the API to use for the endpoints, defaults to :attr:`APIVersion.V1`
+        :param data_sv: The server number to format the base URL with, in case it is of type :attr:`.UrlType.DATA`
 
         :type endpoint: :type:`.UrlLike`
         :type base_url: Optional[:class:`.UrlType`]
         :type api_version: Optional[:class:`.APIVersion`]
+        :type data_sv: :class:`int`, optional
 
         :return: The HTTP response.
         :rtype: `ClientResponse <https://docs.aiohttp.org/en/v3.11.13/client_reference.html#aiohttp.ClientResponse>`_
@@ -201,6 +217,7 @@ class KemoSession:
         return await head(endpoint,
                           base_url=base_url,
                           api_version=api_version,
+                          data_sv=data_sv,
                           session=self.__aio_session,
                           **kwargs)
 
@@ -212,6 +229,7 @@ class KemoSession:
                    json=None,
                    base_url: UrlType=UrlType.API,
                    api_version: Optional[APIVersion]=APIVersion.V1,
+                   data_sv: int=MOST_COMMON_DATA_SV,
                    **kwargs) -> "ClientResponse":
         """
         Overcharges a POST request.
@@ -223,12 +241,14 @@ class KemoSession:
         :param json: JSON-like to send in the body of the request.
         :param base_url: The root URL to use.
         :param api_version: The internal version of the API to use for the endpoints, defaults to :attr:`APIVersion.V1`
+        :param data_sv: The server number to format the base URL with, in case it is of type :attr:`.UrlType.DATA`
 
         :type endpoint: :type:`.UrlLike`
         :type data: Optional[:class:`Any`]
         :type json: Optional[:class:`dict`]
         :type base_url: Optional[:class:`.UrlType`]
         :type api_version: Optional[:class:`.APIVersion`]
+        :type data_sv: :class:`int`, optional
 
         :return: The HTTP response.
         :rtype: `ClientResponse <https://docs.aiohttp.org/en/v3.11.13/client_reference.html#aiohttp.ClientResponse>`_
@@ -239,6 +259,7 @@ class KemoSession:
                           json=json,
                           base_url=base_url,
                           api_version=api_version,
+                          data_sv=data_sv,
                           session=self.__aio_session,
                           **kwargs)
 
@@ -250,6 +271,7 @@ class KemoSession:
                   json=None,
                   base_url: UrlType=UrlType.API,
                   api_version: Optional[APIVersion]=APIVersion.V1,
+                  data_sv: int=MOST_COMMON_DATA_SV,
                   **kwargs) -> "ClientResponse":
         """
         Overcharges a PUT request.
@@ -261,12 +283,14 @@ class KemoSession:
         :param json: JSON-like to send in the body of the request, defaults to ``None``.
         :param base_url: The root URL to use.
         :param api_version: The internal version of the API to use for the endpoints, defaults to :attr:`APIVersion.V1`
+        :param data_sv: The server number to format the base URL with, in case it is of type :attr:`.UrlType.DATA`
 
         :type endpoint: :type:`.UrlLike`
         :type data: Optional[:class:`Any`]
         :type json: Optional[:class:`dict`]
         :type base_url: Optional[:class:`.UrlType`]
         :type api_version: Optional[:class:`.APIVersion`]
+        :type data_sv: :class:`int`, optional
 
         :return: The HTTP response.
         :rtype: `ClientResponse <https://docs.aiohttp.org/en/v3.11.13/client_reference.html#aiohttp.ClientResponse>`_
@@ -277,6 +301,7 @@ class KemoSession:
                          json=json,
                          base_url=base_url,
                          api_version=api_version,
+                         data_sv=data_sv,
                          session=self.__aio_session,
                          **kwargs)
 
@@ -288,6 +313,7 @@ class KemoSession:
                     json=None,
                     base_url: UrlType=UrlType.API,
                     api_version: Optional[APIVersion]=APIVersion.V1,
+                    data_sv: int=MOST_COMMON_DATA_SV,
                     **kwargs) -> "ClientResponse":
         """
         Overcharges a PATCH request.
@@ -299,12 +325,14 @@ class KemoSession:
         :param json: JSON-like to send in the body of the request, defaults to ``None``.
         :param base_url: The root URL to use.
         :param api_version: The internal version of the API to use for the endpoints, defaults to :attr:`APIVersion.V1`
+        :param data_sv: The server number to format the base URL with, in case it is of type :attr:`.UrlType.DATA`
 
         :type endpoint: :type:`.UrlLike`
         :type data: Optional[:class:`Any`]
         :type json: Optional[:class:`dict`]
         :type base_url: Optional[:class:`.UrlType`]
         :type api_version: Optional[:class:`.APIVersion`]
+        :type data_sv: :class:`int`, optional
 
         :return: The HTTP response.
         :rtype: `ClientResponse <https://docs.aiohttp.org/en/v3.11.13/client_reference.html#aiohttp.ClientResponse>`_
@@ -315,6 +343,7 @@ class KemoSession:
                            json=json,
                            base_url=base_url,
                            api_version=api_version,
+                           data_sv=data_sv,
                            session=self.__aio_session,
                            **kwargs)
 
@@ -324,6 +353,7 @@ class KemoSession:
                      *,
                      base_url: UrlType=UrlType.API,
                      api_version: Optional[APIVersion]=APIVersion.V1,
+                     data_sv: int=MOST_COMMON_DATA_SV,
                      **kwargs) -> "ClientResponse":
         """
         Overcharges a DELETE request.
@@ -331,10 +361,12 @@ class KemoSession:
         :param endpoint: The endpoint to map to.
         :param base_url: The root URL to use.
         :param api_version: The internal version of the API to use for the endpoints, defaults to :attr:`APIVersion.V1`
+        :param data_sv: The server number to format the base URL with, in case it is of type :attr:`.UrlType.DATA`
 
         :type endpoint: :type:`.UrlLike`
         :type base_url: Optional[:class:`.UrlType`]
         :type api_version: Optional[:class:`.APIVersion`]
+        :type data_sv: :class:`int`, optional
 
         :return: The HTTP response.
         :rtype: `ClientResponse <https://docs.aiohttp.org/en/v3.11.13/client_reference.html#aiohttp.ClientResponse>`_
@@ -343,6 +375,7 @@ class KemoSession:
         return await delete(endpoint,
                             base_url=base_url,
                             api_version=api_version,
+                            data_sv=data_sv,
                             session=self.__aio_session,
                             **kwargs)
 

@@ -31,12 +31,38 @@ FORCELIST: list[int] = [429]
 ADAPTER_PREFIX: UrlLike = "https://"
 "A prefix for URLs that trigger the custom HTTP adapter."
 
+MOST_COMMON_DATA_SV: int = 3
+"The number of the default server to use for DATA URL type."
+
+
+def _parse_api_ver(api_version: Optional[APIVersion], base_url: UrlType) -> UrlLike:
+    """
+    Converts the API version to an actual string to be inserted in requests' URLs.
+    
+    :param api_version: The API version to be analyzed.
+    :param base_url: The base URL. If it is of the :attr:`.UrlType.API` variant, use as-is.
+                     If not, it's always ``None``.
+    
+    :type api_version: Optional[:class:`.APIVersion`]
+    :type data_sv: :class:`int`, optional
+    :type base_url: :class:`.UrlType`
+    
+    :return: The URL-like string ready to be used in URLs.
+    :rtype: :type:`.UrlLike`
+    """
+
+    if not base_url.is_api():
+        return ""
+
+    return ("" if api_version is None else api_version.value)
+
 
 async def request(method: "MethodLike",
                   endpoint: UrlLike,
                   *,
                   base_url: UrlType=UrlType.API,
                   api_version: Optional[APIVersion]=APIVersion.V1,
+                  data_sv: int=MOST_COMMON_DATA_SV,
                   session: ClientSession,
                   **kwargs) -> "ClientResponse":
     """
@@ -46,6 +72,7 @@ async def request(method: "MethodLike",
     :param endpoint: The endpoint to map to.
     :param base_url: The root URL to use.
     :param api_version: The internal version of the API to use for the endpoints, defaults to :attr:`APIVersion.V1`
+    :param data_sv: The server number to format the base URL with, in case it is of type :attr:`.UrlType.DATA`
     :param session: The session to use. This one is assumed to still be open and must be closed some
                     time afterwards.
 
@@ -53,15 +80,18 @@ async def request(method: "MethodLike",
     :type endpoint: :type:`.UrlLike`
     :type base_url: Optional[:class:`.UrlType`]
     :type api_version: Optional[:class:`.APIVersion`]
+    :type data_sv: :class:`int`, optional
     :type session: `ClientSession <https://docs.aiohttp.org/en/v3.11.13/client_reference.html#aiohttp.ClientSession>`_
 
     :return: The HTTP response.
     :rtype: `ClientResponse <https://docs.aiohttp.org/en/v3.11.13/client_reference.html#aiohttp.ClientResponse>`_
     """
 
+    parsed_base_url = base_url.format_data(data_sv)
+
     return await session.request(
         method=method,
-        url=f"{base_url}{'' if api_version is None else api_version}{endpoint}",
+        url=f"{parsed_base_url}{_parse_api_ver(api_version, base_url)}{endpoint}",
         **kwargs
     )
 
@@ -71,6 +101,7 @@ async def get(endpoint: UrlLike,
               params=None,
               base_url: UrlType=UrlType.API,
               api_version: Optional[APIVersion]=APIVersion.V1,
+              data_sv: int=MOST_COMMON_DATA_SV,
               session: ClientSession,
               **kwargs) -> "ClientResponse":
     """
@@ -80,20 +111,24 @@ async def get(endpoint: UrlLike,
     :param params: A ``dict`` with the parameters of the request. Usually of type ``dict[str, int | str | None]``
     :param base_url: The root URL to use.
     :param api_version: The internal version of the API to use for the endpoints, defaults to :attr:`APIVersion.V1`
+    :param data_sv: The server number to format the base URL with, in case it is of type :attr:`.UrlType.DATA`
     :param session: The session to use.
 
     :type endpoint: :type:`.UrlLike`
     :type params: Optional[:class:`dict`]
     :type base_url: Optional[:class:`.UrlType`]
     :type api_version: Optional[:class:`.APIVersion`]
+    :type data_sv: :class:`int`, optional
     :type session: `ClientSession <https://docs.aiohttp.org/en/v3.11.13/client_reference.html#aiohttp.ClientSession>`_
 
     :return: The HTTP response.
     :rtype: `ClientResponse <https://docs.aiohttp.org/en/v3.11.13/client_reference.html#aiohttp.ClientResponse>`_
     """
 
+    parsed_base_url = base_url.format_data(data_sv)
+
     return await session.get(
-        url=f"{base_url}{'' if api_version is None else api_version}{endpoint}",
+        url=f"{parsed_base_url}{_parse_api_ver(api_version, base_url)}{endpoint}",
         params=params,
         **kwargs
     )
@@ -103,6 +138,7 @@ async def options(endpoint: UrlLike,
                   *,
                   base_url: UrlType=UrlType.API,
                   api_version: Optional[APIVersion]=APIVersion.V1,
+                  data_sv: int=MOST_COMMON_DATA_SV,
                   session: ClientSession,
                   **kwargs) -> "ClientResponse":
     """
@@ -111,19 +147,23 @@ async def options(endpoint: UrlLike,
     :param endpoint: The endpoint to map to.
     :param base_url: The root URL to use.
     :param api_version: The internal version of the API to use for the endpoints, defaults to :attr:`APIVersion.V1`
+    :param data_sv: The server number to format the base URL with, in case it is of type :attr:`.UrlType.DATA`
     :param session: The session to use.
 
     :type endpoint: :type:`.UrlLike`
     :type base_url: Optional[:class:`.UrlType`]
     :type api_version: Optional[:class:`.APIVersion`]
+    :type data_sv: :class:`int`, optional
     :type session: `ClientSession <https://docs.aiohttp.org/en/v3.11.13/client_reference.html#aiohttp.ClientSession>`_
 
     :return: The HTTP response.
     :rtype: `ClientResponse <https://docs.aiohttp.org/en/v3.11.13/client_reference.html#aiohttp.ClientResponse>`_
     """
 
+    parsed_base_url = base_url.format_data(data_sv)
+
     return await session.options(
-        url=f"{base_url}{'' if api_version is None else api_version}{endpoint}",
+        url=f"{parsed_base_url}{_parse_api_ver(api_version, base_url)}{endpoint}",
         **kwargs
     )
 
@@ -132,6 +172,7 @@ async def head(endpoint: UrlLike,
                *,
                base_url: UrlType=UrlType.API,
                api_version: Optional[APIVersion]=APIVersion.V1,
+               data_sv: int=MOST_COMMON_DATA_SV,
                session: ClientSession,
                **kwargs) -> "ClientResponse":
     """
@@ -140,19 +181,23 @@ async def head(endpoint: UrlLike,
     :param endpoint: The endpoint to map to.
     :param base_url: The root URL to use.
     :param api_version: The internal version of the API to use for the endpoints, defaults to :attr:`APIVersion.V1`
+    :param data_sv: The server number to format the base URL with, in case it is of type :attr:`.UrlType.DATA`
     :param session: The session to use.
 
     :type endpoint: :type:`.UrlLike`
     :type base_url: Optional[:class:`.UrlType`]
     :type api_version: Optional[:class:`.APIVersion`]
+    :type data_sv: :class:`int`, optional
     :type session: `ClientSession <https://docs.aiohttp.org/en/v3.11.13/client_reference.html#aiohttp.ClientSession>`_
 
     :return: The HTTP response.
     :rtype: `ClientResponse <https://docs.aiohttp.org/en/v3.11.13/client_reference.html#aiohttp.ClientResponse>`_
     """
 
+    parsed_base_url = base_url.format_data(data_sv)
+
     return await session.head(
-        url=f"{base_url}{'' if api_version is None else api_version}{endpoint}",
+        url=f"{parsed_base_url}{_parse_api_ver(api_version, base_url)}{endpoint}",
         **kwargs
     )
 
@@ -163,6 +208,7 @@ async def post(endpoint: UrlLike,
                json=None,
                base_url: UrlType=UrlType.API,
                api_version: Optional[APIVersion]=APIVersion.V1,
+               data_sv: int=MOST_COMMON_DATA_SV,
                session: ClientSession,
                **kwargs) -> "ClientResponse":
     """
@@ -175,6 +221,7 @@ async def post(endpoint: UrlLike,
     :param json: JSON-like to send in the body of the request, defaults to ``None``
     :param base_url: The root URL to use.
     :param api_version: The internal version of the API to use for the endpoints, defaults to :attr:`APIVersion.V1`
+    :param data_sv: The server number to format the base URL with, in case it is of type :attr:`.UrlType.DATA`
     :param session: The session to use.
 
     :type endpoint: :type:`.UrlLike`
@@ -182,14 +229,17 @@ async def post(endpoint: UrlLike,
     :type json: Optional[:class:`dict`]
     :type base_url: Optional[:class:`.UrlType`]
     :type api_version: Optional[:class:`.APIVersion`]
+    :type data_sv: :class:`int`, optional
     :type session: `ClientSession <https://docs.aiohttp.org/en/v3.11.13/client_reference.html#aiohttp.ClientSession>`_
 
     :return: The HTTP response.
     :rtype: `ClientResponse <https://docs.aiohttp.org/en/v3.11.13/client_reference.html#aiohttp.ClientResponse>`_
     """
 
+    parsed_base_url = base_url.format_data(data_sv)
+
     return await session.post(
-        url=f"{base_url}{'' if api_version is None else api_version}{endpoint}",
+        url=f"{parsed_base_url}{_parse_api_ver(api_version, base_url)}{endpoint}",
         data=data,
         json=json,
         **kwargs
@@ -202,6 +252,7 @@ async def put(endpoint: UrlLike,
               json=None,
               base_url: UrlType=UrlType.API,
               api_version: Optional[APIVersion]=APIVersion.V1,
+              data_sv: int=MOST_COMMON_DATA_SV,
               session: ClientSession,
               **kwargs) -> "ClientResponse":
     """
@@ -214,6 +265,7 @@ async def put(endpoint: UrlLike,
     :param json: JSON-like to send in the body of the request, defaults to ``None``.
     :param base_url: The root URL to use.
     :param api_version: The internal version of the API to use for the endpoints, defaults to :attr:`APIVersion.V1`
+    :param data_sv: The server number to format the base URL with, in case it is of type :attr:`.UrlType.DATA`
     :param session: The session to use.
 
     :type endpoint: :type:`.UrlLike`
@@ -221,14 +273,17 @@ async def put(endpoint: UrlLike,
     :type json: Optional[:class:`dict`]
     :type base_url: Optional[:class:`.UrlType`]
     :type api_version: Optional[:class:`.APIVersion`]
+    :type data_sv: :class:`int`, optional
     :type session: `ClientSession <https://docs.aiohttp.org/en/v3.11.13/client_reference.html#aiohttp.ClientSession>`_
 
     :return: The HTTP response.
     :rtype: `ClientResponse <https://docs.aiohttp.org/en/v3.11.13/client_reference.html#aiohttp.ClientResponse>`_
     """
 
+    parsed_base_url = base_url.format_data(data_sv)
+
     return await session.put(
-        url=f"{base_url}{'' if api_version is None else api_version}{endpoint}",
+        url=f"{parsed_base_url}{_parse_api_ver(api_version, base_url)}{endpoint}",
         data=data,
         json=json
         **kwargs
@@ -241,6 +296,7 @@ async def patch(endpoint: UrlLike,
                 json=None,
                 base_url: UrlType=UrlType.API,
                 api_version: Optional[APIVersion]=APIVersion.V1,
+                data_sv: int=MOST_COMMON_DATA_SV,
                 session: ClientSession,
                 **kwargs) -> "ClientResponse":
     """
@@ -253,6 +309,7 @@ async def patch(endpoint: UrlLike,
     :param json: JSON-like to send in the body of the request, defaults to ``None``.
     :param base_url: The root URL to use.
     :param api_version: The internal version of the API to use for the endpoints, defaults to :attr:`APIVersion.V1`
+    :param data_sv: The server number to format the base URL with, in case it is of type :attr:`.UrlType.DATA`
     :param session: The session to use.
 
     :type endpoint: :type:`.UrlLike`
@@ -260,14 +317,17 @@ async def patch(endpoint: UrlLike,
     :type json: Optional[:class:`dict`]
     :type base_url: Optional[:class:`.UrlType`]
     :type api_version: Optional[:class:`.APIVersion`]
+    :type data_sv: :class:`int`, optional
     :type session: `ClientSession <https://docs.aiohttp.org/en/v3.11.13/client_reference.html#aiohttp.ClientSession>`_
 
     :return: The HTTP response.
     :rtype: `ClientResponse <https://docs.aiohttp.org/en/v3.11.13/client_reference.html#aiohttp.ClientResponse>`_
     """
 
+    parsed_base_url = base_url.format_data(data_sv)
+
     return await session.patch(
-        url=f"{base_url}{'' if api_version is None else api_version}{endpoint}",
+        url=f"{parsed_base_url}{_parse_api_ver(api_version, base_url)}{endpoint}",
         data=data,
         json=json
         **kwargs
@@ -278,6 +338,7 @@ async def delete(endpoint: UrlLike,
                  *,
                  base_url: UrlType=UrlType.API,
                  api_version: Optional[APIVersion]=APIVersion.V1,
+                 data_sv: int=MOST_COMMON_DATA_SV,
                  session: ClientSession,
                  **kwargs) -> "ClientResponse":
     """
@@ -286,18 +347,22 @@ async def delete(endpoint: UrlLike,
     :param endpoint: The endpoint to map to.
     :param base_url: The root URL to use.
     :param api_version: The internal version of the API to use for the endpoints, defaults to :attr:`APIVersion.V1`
+    :param data_sv: The server number to format the base URL with, in case it is of type :attr:`.UrlType.DATA`
     :param session: The session to use.
 
     :type endpoint: :type:`.UrlLike`
     :type base_url: Optional[:class:`.UrlType`]
     :type api_version: Optional[:class:`.APIVersion`]
+    :type data_sv: :class:`int`, optional
     :type session: `ClientSession <https://docs.aiohttp.org/en/v3.11.13/client_reference.html#aiohttp.ClientSession>`_
 
     :return: The HTTP response.
     :rtype: `ClientResponse <https://docs.aiohttp.org/en/v3.11.13/client_reference.html#aiohttp.ClientResponse>`_
     """
 
+    parsed_base_url = base_url.format_data(data_sv)
+
     return await session.delete(
-        url=f"{base_url}{'' if api_version is None else api_version}{endpoint}",
+        url=f"{parsed_base_url}{_parse_api_ver(api_version, base_url)}{endpoint}",
         **kwargs
     )

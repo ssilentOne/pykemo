@@ -58,13 +58,10 @@ class File:
         self._rel_path: "UrlLike" = path
 
         self._content_type: Optional[str] = content_type
-        self._url_root: "UrlLike" = url_source.value
+        self._url_root: UrlType = url_source
         self._server: int = server
 
         self.__kemo_session: Optional[KemoSession] = None
-
-        if url_source.is_data():
-            self._url_root = url_source.value.format(i=self._server)
 
 
 
@@ -128,7 +125,7 @@ class File:
         :rtype: :type:`.UrlLike`
         """
 
-        return f"{self._url_root}{self._rel_path}"
+        return f"{self._url_root.format_data(self._server)}{self._rel_path}"
 
 
     def with_session(self, ks: "KemoSession") -> Self:
@@ -265,7 +262,7 @@ class File:
 
         response = await self.__kemo_session.get(self._rel_path,
                                                  base_url=self._url_root,
-                                                 api_version=None)
+                                                 data_sv=self._server)
 
         await self._download(response, path, verbose, show_order, chunk_size)
 

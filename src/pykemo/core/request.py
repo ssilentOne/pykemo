@@ -4,18 +4,17 @@ Custom Requests module.
 from typing import TYPE_CHECKING, TypeAlias
 
 from aiohttp import ClientSession
+from aiohttp.typedefs import StrOrURL
 
 from .urltypes import UrlType
 from .api_version import APIVersion
 
 if TYPE_CHECKING:
-    from os import PathLike
-
     from aiohttp import ClientResponse
 
     from ._request_types import MethodLike
 
-UrlLike: TypeAlias = "PathLike"
+UrlLike: TypeAlias = StrOrURL
 """
 A 'URL-like' is a string of the style `/a/b/c/d`.
 """

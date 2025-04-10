@@ -19,7 +19,7 @@ The internal API "versions" to use in the endponts.
 The endpoints require to append strings like ``"/v1"`` or ``"/v2"`` before the endpoint, and
 this enum can be used to abstract that part on many of the relevant functions.
 
-.. autoclass:: pykemo.core.api_version.APIVersion
+.. autoclass:: pykemo.core.api_versions.APIVersion
     :members:
     :show-inheritance:
 

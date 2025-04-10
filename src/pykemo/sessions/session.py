@@ -90,7 +90,7 @@ class KemoSession:
                       endpoint: "UrlLike",
                       *,
                       base_url: UrlType=UrlType.API,
-                      api_version: APIVersion=APIVersion.V1,
+                      api_version: Optional[APIVersion]=APIVersion.V1,
                       **kwargs) -> "ClientResponse":
         """
         Overcharges the request to include the session cookie.
@@ -122,7 +122,7 @@ class KemoSession:
                   *,
                   params=None,
                   base_url: UrlType=UrlType.API,
-                  api_version: APIVersion=APIVersion.V1,
+                  api_version: Optional[APIVersion]=APIVersion.V1,
                   **kwargs) -> "ClientResponse":
         """
         Overcharges a GET request.
@@ -153,7 +153,7 @@ class KemoSession:
                       endpoint: "UrlLike",
                       *,
                       base_url: UrlType=UrlType.API,
-                      api_version: APIVersion=APIVersion.V1,
+                      api_version: Optional[APIVersion]=APIVersion.V1,
                       **kwargs) -> "ClientResponse":
         """
         Overcharges an OPTIONS request.
@@ -181,7 +181,7 @@ class KemoSession:
                    endpoint: "UrlLike",
                    *,
                    base_url: UrlType=UrlType.API,
-                   api_version: APIVersion=APIVersion.V1,
+                   api_version: Optional[APIVersion]=APIVersion.V1,
                    **kwargs) -> "ClientResponse":
         """
         Overcharges a HEAD request.
@@ -211,7 +211,7 @@ class KemoSession:
                    data=None,
                    json=None,
                    base_url: UrlType=UrlType.API,
-                   api_version: APIVersion=APIVersion.V1,
+                   api_version: Optional[APIVersion]=APIVersion.V1,
                    **kwargs) -> "ClientResponse":
         """
         Overcharges a POST request.
@@ -249,7 +249,7 @@ class KemoSession:
                   data=None,
                   json=None,
                   base_url: UrlType=UrlType.API,
-                  api_version: APIVersion=APIVersion.V1,
+                  api_version: Optional[APIVersion]=APIVersion.V1,
                   **kwargs) -> "ClientResponse":
         """
         Overcharges a PUT request.
@@ -287,7 +287,7 @@ class KemoSession:
                     data=None,
                     json=None,
                     base_url: UrlType=UrlType.API,
-                    api_version: APIVersion=APIVersion.V1,
+                    api_version: Optional[APIVersion]=APIVersion.V1,
                     **kwargs) -> "ClientResponse":
         """
         Overcharges a PATCH request.
@@ -323,7 +323,7 @@ class KemoSession:
                      endpoint: "UrlLike",
                      *,
                      base_url: UrlType=UrlType.API,
-                     api_version: APIVersion=APIVersion.V1,
+                     api_version: Optional[APIVersion]=APIVersion.V1,
                      **kwargs) -> "ClientResponse":
         """
         Overcharges a DELETE request.

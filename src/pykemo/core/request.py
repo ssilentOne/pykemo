@@ -1,13 +1,13 @@
 """
 Custom Requests module.
 """
-from typing import TYPE_CHECKING, TypeAlias
+from typing import TYPE_CHECKING, Optional, TypeAlias
 
 from aiohttp import ClientSession
 from aiohttp.typedefs import StrOrURL
 
+from .api_versions import APIVersion
 from .urltypes import UrlType
-from .api_version import APIVersion
 
 if TYPE_CHECKING:
     from aiohttp import ClientResponse
@@ -36,7 +36,7 @@ async def request(method: "MethodLike",
                   endpoint: UrlLike,
                   *,
                   base_url: UrlType=UrlType.API,
-                  api_version: APIVersion=APIVersion.V1,
+                  api_version: Optional[APIVersion]=APIVersion.V1,
                   session: ClientSession,
                   **kwargs) -> "ClientResponse":
     """
@@ -61,7 +61,7 @@ async def request(method: "MethodLike",
 
     return await session.request(
         method=method,
-        url=f"{base_url}/{api_version}{endpoint}",
+        url=f"{base_url}{'' if api_version is None else api_version}{endpoint}",
         **kwargs
     )
 
@@ -70,7 +70,7 @@ async def get(endpoint: UrlLike,
               *,
               params=None,
               base_url: UrlType=UrlType.API,
-              api_version: APIVersion=APIVersion.V1,
+              api_version: Optional[APIVersion]=APIVersion.V1,
               session: ClientSession,
               **kwargs) -> "ClientResponse":
     """
@@ -93,7 +93,7 @@ async def get(endpoint: UrlLike,
     """
 
     return await session.get(
-        url=f"{base_url}/{api_version}{endpoint}",
+        url=f"{base_url}{'' if api_version is None else api_version}{endpoint}",
         params=params,
         **kwargs
     )
@@ -102,7 +102,7 @@ async def get(endpoint: UrlLike,
 async def options(endpoint: UrlLike,
                   *,
                   base_url: UrlType=UrlType.API,
-                  api_version: APIVersion=APIVersion.V1,
+                  api_version: Optional[APIVersion]=APIVersion.V1,
                   session: ClientSession,
                   **kwargs) -> "ClientResponse":
     """
@@ -123,7 +123,7 @@ async def options(endpoint: UrlLike,
     """
 
     return await session.options(
-        url=f"{base_url}/{api_version}{endpoint}",
+        url=f"{base_url}{'' if api_version is None else api_version}{endpoint}",
         **kwargs
     )
 
@@ -131,7 +131,7 @@ async def options(endpoint: UrlLike,
 async def head(endpoint: UrlLike,
                *,
                base_url: UrlType=UrlType.API,
-               api_version: APIVersion=APIVersion.V1,
+               api_version: Optional[APIVersion]=APIVersion.V1,
                session: ClientSession,
                **kwargs) -> "ClientResponse":
     """
@@ -152,7 +152,7 @@ async def head(endpoint: UrlLike,
     """
 
     return await session.head(
-        url=f"{base_url}/{api_version}{endpoint}",
+        url=f"{base_url}{'' if api_version is None else api_version}{endpoint}",
         **kwargs
     )
 
@@ -162,7 +162,7 @@ async def post(endpoint: UrlLike,
                data=None,
                json=None,
                base_url: UrlType=UrlType.API,
-               api_version: APIVersion=APIVersion.V1,
+               api_version: Optional[APIVersion]=APIVersion.V1,
                session: ClientSession,
                **kwargs) -> "ClientResponse":
     """
@@ -189,7 +189,7 @@ async def post(endpoint: UrlLike,
     """
 
     return await session.post(
-        url=f"{base_url}/{api_version}{endpoint}",
+        url=f"{base_url}{'' if api_version is None else api_version}{endpoint}",
         data=data,
         json=json,
         **kwargs
@@ -201,7 +201,7 @@ async def put(endpoint: UrlLike,
               data=None,
               json=None,
               base_url: UrlType=UrlType.API,
-              api_version: APIVersion=APIVersion.V1,
+              api_version: Optional[APIVersion]=APIVersion.V1,
               session: ClientSession,
               **kwargs) -> "ClientResponse":
     """
@@ -228,7 +228,7 @@ async def put(endpoint: UrlLike,
     """
 
     return await session.put(
-        url=f"{base_url}/{api_version}{endpoint}",
+        url=f"{base_url}{'' if api_version is None else api_version}{endpoint}",
         data=data,
         json=json
         **kwargs
@@ -240,7 +240,7 @@ async def patch(endpoint: UrlLike,
                 data=None,
                 json=None,
                 base_url: UrlType=UrlType.API,
-                api_version: APIVersion=APIVersion.V1,
+                api_version: Optional[APIVersion]=APIVersion.V1,
                 session: ClientSession,
                 **kwargs) -> "ClientResponse":
     """
@@ -267,7 +267,7 @@ async def patch(endpoint: UrlLike,
     """
 
     return await session.patch(
-        url=f"{base_url}/{api_version}{endpoint}",
+        url=f"{base_url}{'' if api_version is None else api_version}{endpoint}",
         data=data,
         json=json
         **kwargs
@@ -277,7 +277,7 @@ async def patch(endpoint: UrlLike,
 async def delete(endpoint: UrlLike,
                  *,
                  base_url: UrlType=UrlType.API,
-                 api_version: APIVersion=APIVersion.V1,
+                 api_version: Optional[APIVersion]=APIVersion.V1,
                  session: ClientSession,
                  **kwargs) -> "ClientResponse":
     """
@@ -298,6 +298,6 @@ async def delete(endpoint: UrlLike,
     """
 
     return await session.delete(
-        url=f"{base_url}/{api_version}{endpoint}",
+        url=f"{base_url}{'' if api_version is None else api_version}{endpoint}",
         **kwargs
     )

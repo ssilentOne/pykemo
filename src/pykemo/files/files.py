@@ -280,7 +280,9 @@ class File:
         elif path.exists() and not force:
             return False
         
-        response = await self.__kemo_session.get(self._rel_path, base_url=self._url_root)
+        response = await self.__kemo_session.get(self._rel_path,
+                                                 base_url=self._url_root,
+                                                 api_version=None)
 
         await self._download(response, path, verbose, show_order, chunk_size)
 

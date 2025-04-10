@@ -8,10 +8,15 @@ from typing import TYPE_CHECKING, Optional, Self, TypeAlias
 from aiohttp import ClientSession
 
 from ..core import (
+    APIVersion,
     UrlType,
     delete,
     get,
+    head,
+    options,
+    patch,
     post,
+    put,
     request,
 )
 
@@ -83,7 +88,9 @@ class KemoSession:
     async def request(self,
                       method: str,
                       endpoint: "UrlLike",
+                      *,
                       base_url: UrlType=UrlType.API,
+                      api_version: APIVersion=APIVersion.V1,
                       **kwargs) -> "ClientResponse":
         """
         Overcharges the request to include the session cookie.
@@ -91,22 +98,31 @@ class KemoSession:
         :param method: The HTTP method to use.
         :param endpoint: The endpoint to map to.
         :param base_url: The root URL to use.
+        :param api_version: The internal version of the API to use for the endpoints, defaults to :attr:`APIVersion.V1`
 
         :type method: :class:`str`
         :type endpoint: :type:`.UrlLike`
         :type base_url: Optional[:class:`.UrlType`]
+        :type api_version: Optional[:class:`.APIVersion`]
 
         :return: The HTTP response.
         :rtype: `ClientResponse <https://docs.aiohttp.org/en/v3.11.13/client_reference.html#aiohttp.ClientResponse>`_
         """
 
-        return await request(method, endpoint, base_url=base_url, session=self.__aio_session, **kwargs)
+        return await request(method,
+                             endpoint,
+                             base_url=base_url,
+                             api_version=api_version,
+                             session=self.__aio_session,
+                             **kwargs)
 
 
     async def get(self,
                   endpoint: "UrlLike",
+                  *,
                   params=None,
                   base_url: UrlType=UrlType.API,
+                  api_version: APIVersion=APIVersion.V1,
                   **kwargs) -> "ClientResponse":
         """
         Overcharges a GET request.
@@ -114,62 +130,221 @@ class KemoSession:
         :param endpoint: The endpoint to map to.
         :param params: A ``dict`` with the parameters of the request. Usually of type ``dict[str, int | str | None]``
         :param base_url: The root URL to use.
+        :param api_version: The internal version of the API to use for the endpoints, defaults to :attr:`APIVersion.V1`
 
         :type endpoint: :type:`.UrlLike`
         :type params: Optional[:class:`dict`]
         :type base_url: Optional[:class:`.UrlType`]
+        :type api_version: Optional[:class:`.APIVersion`]
 
         :return: The HTTP response.
         :rtype: `ClientResponse <https://docs.aiohttp.org/en/v3.11.13/client_reference.html#aiohttp.ClientResponse>`_
         """
 
-        return await get(endpoint, params=params, base_url=base_url, session=self.__aio_session, **kwargs)
+        return await get(endpoint,
+                         params=params,
+                         base_url=base_url,
+                         api_version=api_version,
+                         session=self.__aio_session,
+                         **kwargs)
+
+
+    async def options(self,
+                      endpoint: "UrlLike",
+                      *,
+                      base_url: UrlType=UrlType.API,
+                      api_version: APIVersion=APIVersion.V1,
+                      **kwargs) -> "ClientResponse":
+        """
+        Overcharges an OPTIONS request.
+
+        :param endpoint: The endpoint to map to.
+        :param base_url: The root URL to use.
+        :param api_version: The internal version of the API to use for the endpoints, defaults to :attr:`APIVersion.V1`
+
+        :type endpoint: :type:`.UrlLike`
+        :type base_url: Optional[:class:`.UrlType`]
+        :type api_version: Optional[:class:`.APIVersion`]
+
+        :return: The HTTP response.
+        :rtype: `ClientResponse <https://docs.aiohttp.org/en/v3.11.13/client_reference.html#aiohttp.ClientResponse>`_
+        """
+
+        return await options(endpoint,
+                             base_url=base_url,
+                             api_version=api_version,
+                             session=self.__aio_session,
+                             **kwargs)
+
+
+    async def head(self,
+                   endpoint: "UrlLike",
+                   *,
+                   base_url: UrlType=UrlType.API,
+                   api_version: APIVersion=APIVersion.V1,
+                   **kwargs) -> "ClientResponse":
+        """
+        Overcharges a HEAD request.
+
+        :param endpoint: The endpoint to map to.
+        :param base_url: The root URL to use.
+        :param api_version: The internal version of the API to use for the endpoints, defaults to :attr:`APIVersion.V1`
+
+        :type endpoint: :type:`.UrlLike`
+        :type base_url: Optional[:class:`.UrlType`]
+        :type api_version: Optional[:class:`.APIVersion`]
+
+        :return: The HTTP response.
+        :rtype: `ClientResponse <https://docs.aiohttp.org/en/v3.11.13/client_reference.html#aiohttp.ClientResponse>`_
+        """
+
+        return await head(endpoint,
+                          base_url=base_url,
+                          api_version=api_version,
+                          session=self.__aio_session,
+                          **kwargs)
 
 
     async def post(self,
                    endpoint: "UrlLike",
+                   *,
                    data=None,
                    json=None,
                    base_url: UrlType=UrlType.API,
+                   api_version: APIVersion=APIVersion.V1,
                    **kwargs) -> "ClientResponse":
         """
         Overcharges a POST request.
+
+        .. warning:: ``data`` and ``json`` cannot be used both at once.
         
         :param endpoint: The endpoint to map to.
         :param data: Dictionary, list of file-like object to send in the body of the request.
         :param json: JSON-like to send in the body of the request.
         :param base_url: The root URL to use.
+        :param api_version: The internal version of the API to use for the endpoints, defaults to :attr:`APIVersion.V1`
 
         :type endpoint: :type:`.UrlLike`
         :type data: Optional[:class:`Any`]
         :type json: Optional[:class:`dict`]
         :type base_url: Optional[:class:`.UrlType`]
+        :type api_version: Optional[:class:`.APIVersion`]
 
         :return: The HTTP response.
         :rtype: `ClientResponse <https://docs.aiohttp.org/en/v3.11.13/client_reference.html#aiohttp.ClientResponse>`_
         """
 
-        return await post(endpoint, data=data, json=json, base_url=base_url, session=self.__aio_session, **kwargs)
+        return await post(endpoint,
+                          data=data,
+                          json=json,
+                          base_url=base_url,
+                          api_version=api_version,
+                          session=self.__aio_session,
+                          **kwargs)
+
+
+    async def put(self,
+                  endpoint: "UrlLike",
+                  *,
+                  data=None,
+                  json=None,
+                  base_url: UrlType=UrlType.API,
+                  api_version: APIVersion=APIVersion.V1,
+                  **kwargs) -> "ClientResponse":
+        """
+        Overcharges a PUT request.
+
+        .. warning:: ``data`` and ``json`` cannot be used both at once.
+
+        :param endpoint: The endpoint to map to.
+        :param data: Dictionary, list of file-like object to send in the body of the request, defaults to ``None``
+        :param json: JSON-like to send in the body of the request, defaults to ``None``.
+        :param base_url: The root URL to use.
+        :param api_version: The internal version of the API to use for the endpoints, defaults to :attr:`APIVersion.V1`
+
+        :type endpoint: :type:`.UrlLike`
+        :type data: Optional[:class:`Any`]
+        :type json: Optional[:class:`dict`]
+        :type base_url: Optional[:class:`.UrlType`]
+        :type api_version: Optional[:class:`.APIVersion`]
+
+        :return: The HTTP response.
+        :rtype: `ClientResponse <https://docs.aiohttp.org/en/v3.11.13/client_reference.html#aiohttp.ClientResponse>`_
+        """
+
+        return await put(endpoint,
+                         data=data,
+                         json=json,
+                         base_url=base_url,
+                         api_version=api_version,
+                         session=self.__aio_session,
+                         **kwargs)
+
+
+    async def patch(self,
+                    endpoint: "UrlLike",
+                    *,
+                    data=None,
+                    json=None,
+                    base_url: UrlType=UrlType.API,
+                    api_version: APIVersion=APIVersion.V1,
+                    **kwargs) -> "ClientResponse":
+        """
+        Overcharges a PATCH request.
+
+        .. warning:: ``data`` and ``json`` cannot be used both at once.
+
+        :param endpoint: The endpoint to map to.
+        :param data: Dictionary, list of file-like object to send in the body of the request, defaults to ``None``
+        :param json: JSON-like to send in the body of the request, defaults to ``None``.
+        :param base_url: The root URL to use.
+        :param api_version: The internal version of the API to use for the endpoints, defaults to :attr:`APIVersion.V1`
+
+        :type endpoint: :type:`.UrlLike`
+        :type data: Optional[:class:`Any`]
+        :type json: Optional[:class:`dict`]
+        :type base_url: Optional[:class:`.UrlType`]
+        :type api_version: Optional[:class:`.APIVersion`]
+
+        :return: The HTTP response.
+        :rtype: `ClientResponse <https://docs.aiohttp.org/en/v3.11.13/client_reference.html#aiohttp.ClientResponse>`_
+        """
+
+        return await patch(endpoint,
+                           data=data,
+                           json=json,
+                           base_url=base_url,
+                           api_version=api_version,
+                           session=self.__aio_session,
+                           **kwargs)
 
 
     async def delete(self,
                      endpoint: "UrlLike",
+                     *,
                      base_url: UrlType=UrlType.API,
+                     api_version: APIVersion=APIVersion.V1,
                      **kwargs) -> "ClientResponse":
         """
         Overcharges a DELETE request.
         
         :param endpoint: The endpoint to map to.
         :param base_url: The root URL to use.
+        :param api_version: The internal version of the API to use for the endpoints, defaults to :attr:`APIVersion.V1`
 
         :type endpoint: :type:`.UrlLike`
         :type base_url: Optional[:class:`.UrlType`]
+        :type api_version: Optional[:class:`.APIVersion`]
 
         :return: The HTTP response.
         :rtype: `ClientResponse <https://docs.aiohttp.org/en/v3.11.13/client_reference.html#aiohttp.ClientResponse>`_
         """
 
-        return await delete(endpoint, base_url=base_url, session=self.__aio_session, **kwargs)
+        return await delete(endpoint,
+                            base_url=base_url,
+                            api_version=api_version,
+                            session=self.__aio_session,
+                            **kwargs)
 
 
     def set_session_cookie(self, cookie_auth: TokenValue) -> None:

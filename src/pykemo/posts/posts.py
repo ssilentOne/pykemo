@@ -340,17 +340,21 @@ class Post:
 
         path.mkdir(parents=True, exist_ok=True)
 
-        results = await tqdm_asyncio.gather(*(file.save(path, force=force,
-                                                        verbose=verb_children, show_order=pos+i+1)
-                                             for (i, file) in enumerate(files)),
-                                            miniters=1,
-                                            desc=f"Post '{self.title}'",
-                                            ncols=BAR_WIDTH,
-                                            dynamic_ncols=True,
-                                            unit="file",
-                                            leave=True,
-                                            position=pos,
-                                            colour="blue")
+        files_tasks = [file.save(path, force=force, verbose=verb_children, show_order=pos+i+1)
+                       for (i, file) in enumerate(files)]
+        if verbose:
+            results = await tqdm_asyncio.gather(*files_tasks,
+                                                miniters=1,
+                                                desc=f"Post '{self.title}'",
+                                                ncols=BAR_WIDTH,
+                                                dynamic_ncols=True,
+                                                unit="file",
+                                                leave=True,
+                                                position=pos,
+                                                colour="blue")
+        else:
+            results = await gather(*files_tasks)
+
         return all(results)
 
 

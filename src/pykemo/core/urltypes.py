@@ -2,6 +2,7 @@
 URL types module.
 """
 
+from typing import Any
 from enum import StrEnum
 
 
@@ -45,3 +46,22 @@ class UrlType(StrEnum):
         """
 
         return self == __class__.API
+
+
+    def format_data(self, value: Any) -> str:
+        """
+        If this instance is of type DATA, then it formats the server number. If not, it simply
+        returns the enum value.
+        
+        :param value: The value to substitue in the final string.
+        
+        :type value: :type:`Any`
+        
+        :return: The string, already formatted.
+        :rtype: :class:`str`
+        """
+
+        if not self.is_data():
+            return self.value
+
+        return self.value.format(i=value)
